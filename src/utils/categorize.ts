@@ -1,13 +1,11 @@
 export const categorizeUrl = (url: string): string => {
-    const lower = url.toLowerCase();
-
-    if (lower.match(/github|gitlab|stackoverflow|dev\.to|code/)) return 'Coding';
-    if (lower.match(/gpt|openai|claude|midjourney|ai/)) return 'AI Tools';
-    if (lower.match(/dribbble|behance|figma|unsplash|design/)) return 'Design';
-    if (lower.match(/twitter|x\.com|linkedin|facebook|instagram/)) return 'Social';
-    if (lower.match(/bbc|cnn|nytimes|news/)) return 'News';
-    if (lower.match(/flight|hotel|booking|airbnb|trip/)) return 'Travel';
-    if (lower.match(/youtube|spotify|music|video/)) return 'Music';
+    if (/github|gitlab|stackoverflow|dev\.to|code/i.test(url)) return 'Coding';
+    if (/gpt|openai|claude|midjourney|ai/i.test(url)) return 'AI Tools';
+    if (/dribbble|behance|figma|unsplash|design/i.test(url)) return 'Design';
+    if (/twitter|x\.com|linkedin|facebook|instagram/i.test(url)) return 'Social';
+    if (/bbc|cnn|nytimes|news/i.test(url)) return 'News';
+    if (/flight|hotel|booking|airbnb|trip/i.test(url)) return 'Travel';
+    if (/youtube|spotify|music|video/i.test(url)) return 'Music';
 
     return 'Uncategorized';
 };

@@ -1,10 +1,10 @@
-import { View, Text, Image, Pressable, Alert } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
-import { MoreVertical, ExternalLink, Trash2, Edit2 } from 'lucide-react-native';
+import { MoreVertical } from 'lucide-react-native';
+import { memo, useState } from 'react';
+import { Alert, Image, Pressable, Text, View } from 'react-native';
 import { useLinks } from '../../context/LinkContext';
-import { useState } from 'react';
-import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
+import { Modal } from '../ui/Modal';
 
 // Utility to start web browser
 const openLink = async (url: string) => {
@@ -15,7 +15,7 @@ const openLink = async (url: string) => {
     }
 };
 
-export const LinkItem = ({ link, onEdit }: { link: any, onEdit: (link: any) => void }) => {
+export const LinkItem = memo(({ link, onEdit }: { link: any, onEdit: (link: any) => void }) => {
     const { deleteLink } = useLinks();
     const [showMenu, setShowMenu] = useState(false);
     const [imageError, setImageError] = useState(false);
@@ -89,4 +89,4 @@ export const LinkItem = ({ link, onEdit }: { link: any, onEdit: (link: any) => v
             </Modal>
         </View>
     );
-};
+});

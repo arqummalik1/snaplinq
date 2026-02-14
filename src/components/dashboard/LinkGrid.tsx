@@ -21,16 +21,24 @@ export const LinkGrid = ({ searchQuery, onEdit }: LinkGridProps) => {
         link.url.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    // Group by category
-    const groupedLinks: Record<string, typeof links> = {};
-    filteredLinks.forEach(link => {
-        const cat = link.category || 'Uncategorized';
-        if (!groupedLinks[cat]) groupedLinks[cat] = [];
-        groupedLinks[cat].push(link);
-    });
+    // Group items for SectionList
+    const sections = categories
+        .map(category => ({
+            title: category,
+            data: filteredLinks.filter(l => (l.category || 'Uncategorized') === category)
+        }))
+        .filter(section => section.data.length > 0);
 
-    // Sort categories (custom order + alphabetical)
-    const sortedCategories = categories.filter(c => groupedLinks[c]?.length > 0);
+    // Helper to chunk data for grid layout in SectionList
+    const formatData = (data: any[], numColumns: number) => {
+        const numberOfFullRows = Math.floor(data.length / numColumns);
+        let numberOfElementsLastRow = data.length - (numberOfFullRows * numColumns);
+        while (numberOfElementsLastRow !== numColumns && numberOfElementsLastRow !== 0) {
+            data.push({ id: `blank-${numberOfElementsLastRow}`, empty: true });
+            numberOfElementsLastRow++;
+        }
+        return data;
+    }
 
     if (loading) {
         return (
@@ -51,41 +59,52 @@ export const LinkGrid = ({ searchQuery, onEdit }: LinkGridProps) => {
 
     return (
         <View className="flex-1 px-2">
-            {sortedCategories.map(category => (
-                <View key={category} className="mb-6">
-                    {/* Category Header */}
-                    <View className="flex-row items-center justify-between mb-2 px-2">
-                        <View className="flex-row items-center space-x-2">
-                            <View className="w-1 h-6 bg-emerald-500 rounded-full" />
-                            <Text className="text-lg font-bold text-slate-800 dark:text-slate-100">
-                                {category} <Text className="text-slate-400 text-sm font-normal">({groupedLinks[category].length})</Text>
-                            </Text>
-                        </View>
-                        {category !== 'Uncategorized' && (
-                            <Pressable onPress={() => deleteCategory(category)} className="p-2">
-                                <Trash2 size={16} color="#94a3b8" />
-                            </Pressable>
-                        )}
-                    </View>
+            <FlatList
+                data={sections}
+                keyExtractor={(item) => item.title}
+                renderItem={({ item: section }) => {
+                    const chunkedData = [];
+                    for (let i = 0; i < section.data.length; i += numColumns) {
+                        chunkedData.push(section.data.slice(i, i + numColumns));
+                    }
 
-                    {/* Grid */}
-                    <FlatList
-                        data={groupedLinks[category]}
-                        key={`grid-${numColumns}-${category}`} // Force re-render on column change
-                        numColumns={numColumns}
-                        scrollEnabled={false} // Since we are mapping categories, list is inside scrollview usually. 
-                        // Wait, nesting FlatLists is bad. 
-                        // Better approach: One SectionList or FlatList with sections.
-                        // But for now, mapping Views is easier for "grouped" layout visuals.
-                        renderItem={({ item }) => (
-                            <View style={{ width: `${100 / numColumns}%` }}>
-                                <LinkItem link={item} onEdit={onEdit} />
+                    return (
+                        <View className="mb-6">
+                            {/* Category Header */}
+                            <View className="flex-row items-center justify-between mb-2 px-2">
+                                <View className="flex-row items-center space-x-2">
+                                    <View className="w-1 h-6 bg-emerald-500 rounded-full" />
+                                    <Text className="text-lg font-bold text-slate-800 dark:text-slate-100">
+                                        {section.title} <Text className="text-slate-400 text-sm font-normal">({section.data.length})</Text>
+                                    </Text>
+                                </View>
+                                {section.title !== 'Uncategorized' && section.data.length === 0 && (
+                                    <Pressable onPress={() => deleteCategory(section.title)} className="p-2">
+                                        <Trash2 size={16} color="#94a3b8" />
+                                    </Pressable>
+                                )}
                             </View>
-                        )}
-                    />
-                </View>
-            ))}
-            <View className="h-24" /> {/* Bottom padding */}
+                            {/* Grid Rows */}
+                            <View>
+                                {chunkedData.map((row, rowIndex) => (
+                                    <View key={rowIndex} className="flex-row">
+                                        {row.map((link) => (
+                                            <View key={link.id} style={{ width: `${100 / numColumns}%` }}>
+                                                <LinkItem link={link} onEdit={onEdit} />
+                                            </View>
+                                        ))}
+                                        {/* Fill remaining space in the row if needed */}
+                                        {Array.from({ length: numColumns - row.length }).map((_, i) => (
+                                            <View key={`empty-${rowIndex}-${i}`} style={{ width: `${100 / numColumns}%` }} />
+                                        ))}
+                                    </View>
+                                ))}
+                            </View>
+                        </View>
+                    )
+                }}
+                ListFooterComponent={<View className="h-24" />}
+            />
         </View>
     );
 };
