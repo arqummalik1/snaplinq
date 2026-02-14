@@ -1,4 +1,3 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { LogOut, Moon, Plus, Search, Sun } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
@@ -6,6 +5,7 @@ import { Pressable, Text, View } from 'react-native';
 import { AddLinkModal } from '../src/components/dashboard/AddLinkModal';
 import { LinkGrid } from '../src/components/dashboard/LinkGrid';
 import { Input } from '../src/components/ui/Input';
+import { Logo } from '../src/components/ui/Logo';
 import { useAuth } from '../src/context/AuthContext';
 import { useTheme } from '../src/context/ThemeContext';
 
@@ -33,14 +33,7 @@ export default function Dashboard() {
 
                 {/* Brand Identity */}
                 <View className="flex-row items-center gap-3">
-                    <LinearGradient
-                        colors={['#34d399', '#06b6d4']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        className="w-10 h-10 rounded-xl items-center justify-center shadow-emerald-500/20 shadow-lg"
-                    >
-                        <Text className="text-white font-bold text-xl font-sans">S</Text>
-                    </LinearGradient>
+                    <Logo width={40} height={40} className="rounded-xl shadow-emerald-500/20 shadow-lg" />
                     <Text className="font-bold text-2xl text-slate-800 dark:text-slate-100 tracking-tight hidden md:flex">Snaplinq</Text>
                 </View>
 
