@@ -23,7 +23,7 @@
       "package": "com.snaplinq.app"
     },
     "web": {
-      "favicon": "./assets/favicon.png",
+      "favicon": "./assets/images/favicon.png",
       "bundler": "metro"
     },
     "scheme": "snaplinq",
