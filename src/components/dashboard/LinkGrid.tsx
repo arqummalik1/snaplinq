@@ -13,10 +13,10 @@ export const LinkGrid = ({ searchQuery, onEdit, contentContainerStyle }: LinkGri
     const { links, categories, deleteCategory, loading } = useLinks();
     const { width } = useWindowDimensions();
 
-    // Responsive columns to match iOS Home Screen / App Library
-    // Mobile: Always 4 columns
-    // Tablet/Desktop: More
-    const numColumns = width < 640 ? 4 : width < 1024 ? 6 : width < 1280 ? 8 : 10;
+    // Responsive columns
+    // Mobile: 3 columns for clean spacing
+    // Tablet/Desktop: progressively more
+    const numColumns = width < 640 ? 3 : width < 1024 ? 5 : width < 1280 ? 7 : 9;
 
     // Filter links
     const filteredLinks = links.filter(link =>
@@ -55,9 +55,6 @@ export const LinkGrid = ({ searchQuery, onEdit, contentContainerStyle }: LinkGri
                 data={sections}
                 keyExtractor={(item) => item.title}
                 renderItem={({ item: section }) => {
-                    // Skip empty sections if we are searching, or strictly if user wants to hide them (but we enabled them for deletion)
-                    // If not searching, show all enabled categories
-                    // If section is empty, do not show it
                     if (section.data.length === 0) return null;
 
                     const chunkedData = [];
@@ -66,13 +63,15 @@ export const LinkGrid = ({ searchQuery, onEdit, contentContainerStyle }: LinkGri
                     }
 
                     return (
-                        <View className="mb-8">
+                        <View className="mb-5">
                             {/* Category Header */}
-                            {/* Only show header if there are items OR it's a user-managed category that needs deleting */}
-                            <View className="flex-row items-center justify-between mb-4 pl-2">
-                                <Text className="text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
-                                    {section.title}
-                                </Text>
+                            <View className="flex-row items-center justify-between mb-3 pl-2">
+                                <View className="flex-row items-center gap-2">
+                                    <View className="w-1 h-5 bg-emerald-500 rounded-full" />
+                                    <Text className="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+                                        {section.title}
+                                    </Text>
+                                </View>
 
                                 {section.title !== 'Uncategorized' && section.data.length === 0 && (
                                     <Pressable
@@ -87,7 +86,7 @@ export const LinkGrid = ({ searchQuery, onEdit, contentContainerStyle }: LinkGri
                             {/* Grid container */}
                             <View>
                                 {chunkedData.map((row, rowIndex) => (
-                                    <View key={rowIndex} className="flex-row justify-between mb-2">
+                                    <View key={rowIndex} className="flex-row justify-between mb-1">
                                         {row.map((link) => (
                                             <View key={link.id} style={{ width: `${100 / numColumns}%` }} className="items-center">
                                                 <LinkItem link={link} onEdit={onEdit} />

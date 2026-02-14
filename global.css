@@ -1,3 +1,22 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Prevent horizontal overflow & unwanted zoom on mobile web */
+html, body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
+}
+
+/* Prevent input zoom on iOS */
+input, select, textarea {
+  font-size: 16px !important;
+}
+
+/* Ensure proper viewport fitting */
+#root {
+  max-width: 100vw;
+  overflow-x: hidden;
+}

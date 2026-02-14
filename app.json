@@ -24,7 +24,10 @@
     },
     "web": {
       "favicon": "./assets/images/favicon.png",
-      "bundler": "metro"
+      "bundler": "metro",
+      "name": "Snaplinq",
+      "shortName": "Snaplinq",
+      "description": "Your personal link vault"
     },
     "scheme": "snaplinq",
     "plugins": [
