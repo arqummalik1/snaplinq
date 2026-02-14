@@ -44,7 +44,7 @@ export const LinkItem = memo(({ link, onEdit }: { link: any, onEdit: (link: any)
                 className="group items-center justify-center"
             >
                 {/* iOS App Icon Shape */}
-                <View className="w-[60px] h-[60px] sm:w-[72px] sm:h-[72px] mb-2 bg-white dark:bg-slate-800 rounded-[14px] sm:rounded-[18px] items-center justify-center overflow-hidden shadow-sm hover:scale-105 active:scale-95 transition-transform duration-200 border border-slate-200/50 dark:border-slate-700/50">
+                <View className="w-[60px] h-[60px] sm:w-[72px] sm:h-[72px] mb-2 bg-white dark:bg-slate-800 rounded-2xl sm:rounded-3xl items-center justify-center overflow-hidden shadow-sm hover:scale-105 active:scale-95 transition-transform duration-200 border border-slate-200/50 dark:border-slate-700/50">
                     {!imageError && link.icon ? (
                         <Image
                             source={{ uri: link.icon }}
