@@ -1,6 +1,6 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-import { useColorScheme } from 'nativewind';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useColorScheme } from 'nativewind';
+import { createContext, useContext, useEffect, useState } from 'react';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -37,7 +37,9 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 
     const toggleTheme = () => {
         const next = colorScheme === 'dark' ? 'light' : 'dark';
-        setTheme(next);
+        setThemeState(next);
+        setColorScheme(next);
+        AsyncStorage.setItem('snaplinq_theme', next);
     };
 
     return (
