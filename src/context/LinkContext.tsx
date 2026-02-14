@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import { Alert } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
-import { Alert } from 'react-native';
 
 interface Link {
     id: string;
@@ -22,7 +22,8 @@ interface LinkContextType {
     updateLink: (id: string, updates: Partial<Link>) => Promise<void>;
     deleteLink: (id: string) => Promise<void>;
     addCategory: (name: string) => void;
-    deleteCategory: (name: string) => void;
+    deleteCategory: (name: string) => Promise<void>;
+    renameCategory: (oldName: string, newName: string) => Promise<void>;
 }
 
 const LinkContext = createContext<LinkContextType | undefined>(undefined);
@@ -95,11 +96,60 @@ export const LinkProvider = ({ children }: { children: React.ReactNode }) => {
         if (!categories.includes(name)) setCategories([...categories, name]);
     };
 
-    const deleteCategory = (name: string) => {
-        if (name === 'Uncategorized') return;
-        setCategories(categories.filter(c => c !== name));
-        // Implementation choice: do we move links to Uncategorized? 
-        // For now, let's keep it simple.
+    const deleteCategory = async (name: string) => {
+        if (name === 'Uncategorized') {
+            Alert.alert('Cannot delete default category');
+            return;
+        }
+
+        try {
+            // 1. Move all links in this category to 'Uncategorized'
+            const { error: updateError } = await supabase
+                .from('links')
+                .update({ category: 'Uncategorized' })
+                .eq('category', name)
+                .eq('user_id', session?.user?.id);
+
+            if (updateError) throw updateError;
+
+            // 2. Remove from local state
+            setCategories(categories.filter(c => c !== name));
+            await refresh(); // Refresh to get updated links
+        } catch (error) {
+            console.error('Error deleting category:', error);
+            Alert.alert('Error', 'Failed to delete category');
+            throw error;
+        }
+    };
+
+    const renameCategory = async (oldName: string, newName: string) => {
+        if (oldName === 'Uncategorized') {
+            Alert.alert('Cannot rename default category');
+            return;
+        }
+        if (categories.includes(newName)) {
+            Alert.alert('Category name already exists');
+            return;
+        }
+
+        try {
+            // 1. Update all links with this category
+            const { error } = await supabase
+                .from('links')
+                .update({ category: newName })
+                .eq('category', oldName)
+                .eq('user_id', session?.user?.id);
+
+            if (error) throw error;
+
+            // 2. Update local state
+            setCategories(categories.map(c => c === oldName ? newName : c));
+            await refresh();
+        } catch (error) {
+            console.error('Error renaming category:', error);
+            Alert.alert('Error', 'Failed to rename category');
+            throw error;
+        }
     };
 
     return (
@@ -112,7 +162,8 @@ export const LinkProvider = ({ children }: { children: React.ReactNode }) => {
             updateLink,
             deleteLink,
             addCategory,
-            deleteCategory
+            deleteCategory,
+            renameCategory
         }}>
             {children}
         </LinkContext.Provider>

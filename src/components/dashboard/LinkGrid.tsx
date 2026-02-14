@@ -57,7 +57,8 @@ export const LinkGrid = ({ searchQuery, onEdit, contentContainerStyle }: LinkGri
                 renderItem={({ item: section }) => {
                     // Skip empty sections if we are searching, or strictly if user wants to hide them (but we enabled them for deletion)
                     // If not searching, show all enabled categories
-                    if (section.data.length === 0 && section.title === 'Uncategorized') return null;
+                    // If section is empty, do not show it
+                    if (section.data.length === 0) return null;
 
                     const chunkedData = [];
                     for (let i = 0; i < section.data.length; i += numColumns) {
