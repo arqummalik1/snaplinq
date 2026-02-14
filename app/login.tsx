@@ -1,11 +1,11 @@
-import { View, Text, Switch, Pressable, Platform, Alert, Image } from 'react-native';
-import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { useAuth } from '../src/context/AuthContext';
+import { useState } from 'react';
+import { Alert, Pressable, Switch, Text, View } from 'react-native';
 import { Button } from '../src/components/ui/Button';
 import { Input } from '../src/components/ui/Input';
+import { Logo } from '../src/components/ui/Logo';
+import { useAuth } from '../src/context/AuthContext';
 import { supabase } from '../src/lib/supabase';
-import { LinearGradient } from 'expo-linear-gradient';
 
 export default function Login() {
     const router = useRouter();
@@ -50,12 +50,7 @@ export default function Login() {
 
                 {/* Logo */}
                 <View className="items-center mb-8">
-                    <LinearGradient
-                        colors={['#34d399', '#06b6d4']}
-                        className="w-16 h-16 rounded-2xl items-center justify-center mb-4 shadow-lg"
-                    >
-                        <Text className="text-white text-3xl font-bold">L</Text>
-                    </LinearGradient>
+                    <Logo className="mb-4" width={80} height={80} />
                     <Text className="text-2xl font-bold text-slate-900 dark:text-white">
                         {isSignUp ? "Create Account" : "Welcome Back"}
                     </Text>

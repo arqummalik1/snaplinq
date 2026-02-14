@@ -2,7 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { LogOut, Moon, Plus, Search, Sun } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { AddLinkModal } from '../src/components/dashboard/AddLinkModal';
 import { LinkGrid } from '../src/components/dashboard/LinkGrid';
 import { Input } from '../src/components/ui/Input';
@@ -85,15 +85,11 @@ export default function Dashboard() {
             </View>
 
             {/* Main Content with Padding for Header */}
-            <ScrollView
-                className="flex-1"
+            <LinkGrid
+                searchQuery={searchQuery}
+                onEdit={(link) => { setEditingLink(link); setShowAddModal(true); }}
                 contentContainerStyle={{ paddingTop: 130, paddingBottom: 40 }}
-            >
-                <LinkGrid
-                    searchQuery={searchQuery}
-                    onEdit={(link) => { setEditingLink(link); setShowAddModal(true); }}
-                />
-            </ScrollView>
+            />
 
             {/* Add/Edit Modal */}
             <AddLinkModal

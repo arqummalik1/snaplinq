@@ -6,14 +6,17 @@ import { LinkItem } from './LinkItem';
 interface LinkGridProps {
     searchQuery: string;
     onEdit: (link: any) => void;
+    contentContainerStyle?: any;
 }
 
-export const LinkGrid = ({ searchQuery, onEdit }: LinkGridProps) => {
+export const LinkGrid = ({ searchQuery, onEdit, contentContainerStyle }: LinkGridProps) => {
     const { links, categories, deleteCategory, loading } = useLinks();
     const { width } = useWindowDimensions();
 
-    // Responsive columns: Mobile=1, Small Tablet=2, Tablet=3, Desktop=4/5/6
-    const numColumns = width > 1536 ? 6 : width > 1280 ? 5 : width > 1024 ? 4 : width > 768 ? 3 : width > 640 ? 2 : 1;
+    // Responsive columns to match iOS Home Screen / App Library
+    // Mobile: Always 4 columns
+    // Tablet/Desktop: More
+    const numColumns = width < 640 ? 4 : width < 1024 ? 6 : width < 1280 ? 8 : 10;
 
     // Filter links
     const filteredLinks = links.filter(link =>
@@ -26,19 +29,7 @@ export const LinkGrid = ({ searchQuery, onEdit }: LinkGridProps) => {
         .map(category => ({
             title: category,
             data: filteredLinks.filter(l => (l.category || 'Uncategorized') === category)
-        }))
-        .filter(section => section.data.length > 0);
-
-    // Helper to chunk data for grid layout in SectionList
-    const formatData = (data: any[], numColumns: number) => {
-        const numberOfFullRows = Math.floor(data.length / numColumns);
-        let numberOfElementsLastRow = data.length - (numberOfFullRows * numColumns);
-        while (numberOfElementsLastRow !== numColumns && numberOfElementsLastRow !== 0) {
-            data.push({ id: `blank-${numberOfElementsLastRow}`, empty: true });
-            numberOfElementsLastRow++;
-        }
-        return data;
-    }
+        }));
 
     if (loading) {
         return (
@@ -48,7 +39,7 @@ export const LinkGrid = ({ searchQuery, onEdit }: LinkGridProps) => {
         );
     }
 
-    if (filteredLinks.length === 0) {
+    if (filteredLinks.length === 0 && categories.length === 1 && categories[0] === 'Uncategorized') {
         return (
             <View className="flex-1 items-center justify-center pt-20">
                 <Text className="text-slate-500 text-lg">No links found</Text>
@@ -58,58 +49,68 @@ export const LinkGrid = ({ searchQuery, onEdit }: LinkGridProps) => {
     }
 
     return (
-        <View className="flex-1 px-2">
+        <View className="flex-1 px-4">
             <FlatList
+                contentContainerStyle={contentContainerStyle}
                 data={sections}
                 keyExtractor={(item) => item.title}
                 renderItem={({ item: section }) => {
+                    // Skip empty sections if we are searching, or strictly if user wants to hide them (but we enabled them for deletion)
+                    // If not searching, show all enabled categories
+                    if (section.data.length === 0 && section.title === 'Uncategorized') return null;
+
                     const chunkedData = [];
                     for (let i = 0; i < section.data.length; i += numColumns) {
                         chunkedData.push(section.data.slice(i, i + numColumns));
                     }
 
                     return (
-                        <View className="mb-6">
+                        <View className="mb-8">
                             {/* Category Header */}
-                            <View className="flex-row items-center justify-between mb-4 px-2 pt-2">
-                                <View className="flex-row items-center gap-3">
-                                    <View className="h-8 px-3 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 items-center justify-center">
-                                        <Text className="text-xs font-medium text-slate-500 dark:text-slate-400">{section.data.length}</Text>
-                                    </View>
-                                    <Text className="text-base font-bold text-slate-700 dark:text-slate-200 tracking-wide uppercase opacity-90">
-                                        {section.title}
-                                    </Text>
-                                </View>
+                            {/* Only show header if there are items OR it's a user-managed category that needs deleting */}
+                            <View className="flex-row items-center justify-between mb-4 pl-2">
+                                <Text className="text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+                                    {section.title}
+                                </Text>
 
-                                {section.title !== 'Uncategorized' && (
+                                {section.title !== 'Uncategorized' && section.data.length === 0 && (
                                     <Pressable
                                         onPress={() => deleteCategory(section.title)}
-                                        className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 group transition-colors"
+                                        className="p-2 -mr-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
                                     >
-                                        <Trash2 size={16} className="text-slate-300 group-hover:text-red-500 transition-colors" />
+                                        <Trash2 size={18} className="text-red-500 opacity-70" />
                                     </Pressable>
                                 )}
                             </View>
-                            {/* Grid Rows */}
+
+                            {/* Grid container */}
                             <View>
                                 {chunkedData.map((row, rowIndex) => (
-                                    <View key={rowIndex} className="flex-row">
+                                    <View key={rowIndex} className="flex-row justify-between mb-2">
                                         {row.map((link) => (
-                                            <View key={link.id} style={{ width: `${100 / numColumns}%` }}>
+                                            <View key={link.id} style={{ width: `${100 / numColumns}%` }} className="items-center">
                                                 <LinkItem link={link} onEdit={onEdit} />
                                             </View>
                                         ))}
-                                        {/* Fill remaining space in the row if needed */}
+                                        {/* Fill remaining space */}
                                         {Array.from({ length: numColumns - row.length }).map((_, i) => (
                                             <View key={`empty-${rowIndex}-${i}`} style={{ width: `${100 / numColumns}%` }} />
                                         ))}
                                     </View>
                                 ))}
+
+                                {/* Show message for empty customizable categories */}
+                                {section.data.length === 0 && section.title !== 'Uncategorized' && (
+                                    <View className="py-8 items-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl mx-2">
+                                        <Text className="text-slate-400 text-sm">No apps in this folder</Text>
+                                    </View>
+                                )}
                             </View>
                         </View>
                     )
                 }}
-                ListFooterComponent={<View className="h-24" />}
+                ListFooterComponent={<View className="h-32" />}
+                showsVerticalScrollIndicator={false}
             />
         </View>
     );

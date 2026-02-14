@@ -1,7 +1,7 @@
 import * as WebBrowser from 'expo-web-browser';
-import { MoreVertical } from 'lucide-react-native';
+import { MoreHorizontal } from 'lucide-react-native';
 import { memo, useState } from 'react';
-import { Alert, Image, Pressable, Text, View } from 'react-native';
+import { Alert, Image, Platform, Pressable, Text, View } from 'react-native';
 import { useLinks } from '../../context/LinkContext';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
@@ -36,51 +36,53 @@ export const LinkItem = memo(({ link, onEdit }: { link: any, onEdit: (link: any)
     };
 
     return (
-        <View className="flex-1 m-1.5">
+        <View className="items-center mb-6">
             <Pressable
                 onPress={() => openLink(link.url)}
                 onLongPress={() => setShowMenu(true)}
                 delayLongPress={500}
-                className="group flex-row items-center bg-white dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-emerald-500/30 dark:hover:border-emerald-500/30 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5"
+                className="group items-center justify-center"
             >
-                {/* Large Icon Box */}
-                <View className="w-12 h-12 mr-4 rounded-xl bg-slate-50 dark:bg-slate-700/50 p-1 items-center justify-center border border-slate-100 dark:border-slate-700 overflow-hidden shadow-sm">
+                {/* iOS App Icon Shape */}
+                <View className="w-[60px] h-[60px] sm:w-[72px] sm:h-[72px] mb-2 bg-white dark:bg-slate-800 rounded-[14px] sm:rounded-[18px] items-center justify-center overflow-hidden shadow-sm hover:scale-105 active:scale-95 transition-transform duration-200 border border-slate-200/50 dark:border-slate-700/50">
                     {!imageError && link.icon ? (
                         <Image
                             source={{ uri: link.icon }}
-                            className="w-full h-full rounded-lg"
-                            resizeMode="contain"
+                            className="w-full h-full"
+                            resizeMode="cover"
                             onError={() => setImageError(true)}
                         />
                     ) : (
-                        <Text className="text-xl font-bold text-slate-400">{initial}</Text>
+                        <View className="w-full h-full bg-slate-100 dark:bg-slate-700 items-center justify-center">
+                            <Text className="text-2xl sm:text-3xl font-bold text-slate-400">{initial}</Text>
+                        </View>
                     )}
                 </View>
 
-                {/* Content */}
-                <View className="flex-1 pr-2">
-                    <Text className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-0.5 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors" numberOfLines={1}>
-                        {link.title}
-                    </Text>
-                    <Text className="text-xs text-slate-400 dark:text-slate-500" numberOfLines={1}>
-                        {new URL(link.url).hostname.replace('www.', '')}
-                    </Text>
-                </View>
+                {/* App Label */}
+                <Text
+                    className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200 text-center w-full px-1"
+                    numberOfLines={1}
+                >
+                    {link.title}
+                </Text>
+            </Pressable>
 
-                {/* Context Menu Trigger */}
+            {/* Context Menu Trigger (optional / alternative to long press) */}
+            {Platform.OS === 'web' && (
                 <Pressable
-                    className="p-2 -mr-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/50 opacity-0 group-hover:opacity-100 transition-all"
+                    className="absolute -top-1 -right-1 p-1 rounded-full bg-slate-200 dark:bg-slate-700 opacity-0 group-hover:opacity-100 transition-opacity"
                     onPress={(e) => {
                         e.stopPropagation();
                         setShowMenu(true);
                     }}
                 >
-                    <MoreVertical size={16} className="text-slate-400 dark:text-slate-500" />
+                    <MoreHorizontal size={12} className="text-slate-500 dark:text-slate-400" />
                 </Pressable>
-            </Pressable>
+            )}
 
-            {/* Configurable Menu Modal (Shared for Mobile/Web) */}
-            <Modal visible={showMenu} onClose={() => setShowMenu(false)} title="Options">
+            {/* Configurable Menu Modal */}
+            <Modal visible={showMenu} onClose={() => setShowMenu(false)} title={link.title}>
                 <View className="space-y-3">
                     <Button variant="secondary" onPress={() => openLink(link.url)}>
                         Open Link
@@ -96,3 +98,4 @@ export const LinkItem = memo(({ link, onEdit }: { link: any, onEdit: (link: any)
         </View>
     );
 });
+

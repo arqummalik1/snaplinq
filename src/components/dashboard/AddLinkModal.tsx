@@ -1,11 +1,11 @@
-import { View, Text, Switch, Pressable } from 'react-native';
-import { useState, useEffect } from 'react';
-import { Modal } from '../ui/Modal';
+import { useEffect, useState } from 'react';
+import { Pressable, Text, View } from 'react-native';
+import { useLinks } from '../../context/LinkContext';
+import { categorizeUrl } from '../../utils/categorize';
+import { generateTitle, getFavicon } from '../../utils/metadata';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { useLinks } from '../../context/LinkContext';
-import { getFavicon, generateTitle } from '../../utils/metadata';
-import { categorizeUrl } from '../../utils/categorize';
+import { Modal } from '../ui/Modal';
 
 interface AddLinkModalProps {
     visible: boolean;
@@ -45,7 +45,7 @@ export const AddLinkModal = ({ visible, onClose, editLink }: AddLinkModalProps) 
     };
 
     const handleUrlBlur = () => {
-        if (!url || editLink) return;
+        if (!url) return;
         // Auto-fetch logic
         const autoTitle = generateTitle(url);
         const autoIcon = getFavicon(url);
@@ -54,9 +54,6 @@ export const AddLinkModal = ({ visible, onClose, editLink }: AddLinkModalProps) 
         if (!title) setTitle(autoTitle);
         if (!icon) setIcon(autoIcon);
         if (category === 'Uncategorized') setCategory(autoCat);
-
-        // Auto add category if it doesn't exist?
-        // customizeUrl returns standard categories.
     };
 
     const handleSubmit = async () => {
@@ -99,6 +96,15 @@ export const AddLinkModal = ({ visible, onClose, editLink }: AddLinkModalProps) 
                     placeholder="My Cool Link"
                     value={title}
                     onChangeText={setTitle}
+                />
+
+                {/* Icon Input (New: Allow manual override) */}
+                <Input
+                    label="Icon URL (Optional)"
+                    placeholder="https://example.com/favicon.ico"
+                    value={icon}
+                    onChangeText={setIcon}
+                    autoCapitalize="none"
                 />
 
                 {/* Category Selection (Simple Horizontal Scroll or Dropdown simulator) */}
