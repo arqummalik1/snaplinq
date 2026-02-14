@@ -12,10 +12,7 @@ export function Logo({ className, width = 120, height = 40, style, ...props }: L
 
     return (
         <Image
-            source={isDark
-                ? require('../../../assets/images/logo-dark.png')
-                : require('../../../assets/images/logo-light.png')
-            }
+            source={require('../../../assets/images/icon.png')}
             style={[{ width, height, resizeMode: 'contain' }, style]}
             className={className}
             {...props}
