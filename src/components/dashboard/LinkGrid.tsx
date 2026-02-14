@@ -12,8 +12,8 @@ export const LinkGrid = ({ searchQuery, onEdit }: LinkGridProps) => {
     const { links, categories, deleteCategory, loading } = useLinks();
     const { width } = useWindowDimensions();
 
-    // Responsive columns: Mobile=2, Tablet=4, Desktop=6
-    const numColumns = width > 1280 ? 10 : width > 1024 ? 8 : width > 768 ? 5 : width > 640 ? 4 : 2;
+    // Responsive columns: Mobile=1, Small Tablet=2, Tablet=3, Desktop=4/5/6
+    const numColumns = width > 1536 ? 6 : width > 1280 ? 5 : width > 1024 ? 4 : width > 768 ? 3 : width > 640 ? 2 : 1;
 
     // Filter links
     const filteredLinks = links.filter(link =>
@@ -71,16 +71,22 @@ export const LinkGrid = ({ searchQuery, onEdit }: LinkGridProps) => {
                     return (
                         <View className="mb-6">
                             {/* Category Header */}
-                            <View className="flex-row items-center justify-between mb-2 px-2">
-                                <View className="flex-row items-center space-x-2">
-                                    <View className="w-1 h-6 bg-emerald-500 rounded-full" />
-                                    <Text className="text-lg font-bold text-slate-800 dark:text-slate-100">
-                                        {section.title} <Text className="text-slate-400 text-sm font-normal">({section.data.length})</Text>
+                            <View className="flex-row items-center justify-between mb-4 px-2 pt-2">
+                                <View className="flex-row items-center gap-3">
+                                    <View className="h-8 px-3 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 items-center justify-center">
+                                        <Text className="text-xs font-medium text-slate-500 dark:text-slate-400">{section.data.length}</Text>
+                                    </View>
+                                    <Text className="text-base font-bold text-slate-700 dark:text-slate-200 tracking-wide uppercase opacity-90">
+                                        {section.title}
                                     </Text>
                                 </View>
-                                {section.title !== 'Uncategorized' && section.data.length === 0 && (
-                                    <Pressable onPress={() => deleteCategory(section.title)} className="p-2">
-                                        <Trash2 size={16} color="#94a3b8" />
+
+                                {section.title !== 'Uncategorized' && (
+                                    <Pressable
+                                        onPress={() => deleteCategory(section.title)}
+                                        className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 group transition-colors"
+                                    >
+                                        <Trash2 size={16} className="text-slate-300 group-hover:text-red-500 transition-colors" />
                                     </Pressable>
                                 )}
                             </View>

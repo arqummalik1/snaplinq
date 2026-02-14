@@ -1,4 +1,4 @@
-import { Modal as RNModal, View, Text, Pressable, Platform, KeyboardAvoidingView } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, Modal as RNModal, Text, View } from 'react-native';
 // import { BlurView } from 'expo-blur'; // Removed unused import
 // Actually NativeWind handles web blur? No.
 // Let's use a simple View with opacity for universal support without extra deps
@@ -22,9 +22,8 @@ export const Modal = ({ visible, onClose, title, children }: ModalProps) => {
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
                 className="flex-1 justify-end sm:justify-center"
             >
-                <Pressable className="absolute inset-0 bg-black/50" onPress={onClose} />
-
-                <View className="bg-white dark:bg-slate-900 w-full sm:w-[500px] sm:self-center sm:rounded-2xl rounded-t-3xl p-6 shadow-xl border border-slate-200 dark:border-slate-800">
+                <Pressable className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onPress={onClose} />
+                <View className="bg-white dark:bg-slate-900 w-full sm:w-[500px] sm:self-center sm:rounded-2xl rounded-t-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800">
                     {/* Handle bar for mobile */}
                     <View className="w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full self-center mb-6 sm:hidden" />
 
