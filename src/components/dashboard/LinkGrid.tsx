@@ -1,7 +1,7 @@
-import { View, Text, FlatList, useWindowDimensions, Pressable } from 'react-native';
+import { Trash2 } from 'lucide-react-native';
+import { FlatList, Pressable, Text, useWindowDimensions, View } from 'react-native';
 import { useLinks } from '../../context/LinkContext';
 import { LinkItem } from './LinkItem';
-import { Trash2 } from 'lucide-react-native';
 
 interface LinkGridProps {
     searchQuery: string;
@@ -13,7 +13,7 @@ export const LinkGrid = ({ searchQuery, onEdit }: LinkGridProps) => {
     const { width } = useWindowDimensions();
 
     // Responsive columns: Mobile=2, Tablet=4, Desktop=6
-    const numColumns = width > 1024 ? 6 : width > 768 ? 4 : 2;
+    const numColumns = width > 1280 ? 10 : width > 1024 ? 8 : width > 768 ? 5 : width > 640 ? 4 : 2;
 
     // Filter links
     const filteredLinks = links.filter(link =>

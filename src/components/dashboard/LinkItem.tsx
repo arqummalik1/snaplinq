@@ -36,15 +36,15 @@ export const LinkItem = ({ link, onEdit }: { link: any, onEdit: (link: any) => v
     };
 
     return (
-        <View className="flex-1 m-2">
+        <View className="flex-1 m-1.5">
             <Pressable
                 onPress={() => openLink(link.url)}
                 onLongPress={() => setShowMenu(true)}
                 delayLongPress={500}
-                className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-slate-700 items-center justify-center aspect-square relative"
+                className="bg-white dark:bg-slate-800 rounded-xl p-3 shadow-sm border border-slate-200 dark:border-slate-700 items-center justify-center relative"
             >
                 {/* Icon */}
-                <View className="w-14 h-14 mb-3 rounded-2xl shadow-sm bg-white dark:bg-slate-700 items-center justify-center overflow-hidden">
+                <View className="w-10 h-10 mb-2 rounded-xl shadow-sm bg-white dark:bg-slate-700 items-center justify-center overflow-hidden">
                     {!imageError && link.icon ? (
                         <Image
                             source={{ uri: link.icon }}
@@ -54,7 +54,7 @@ export const LinkItem = ({ link, onEdit }: { link: any, onEdit: (link: any) => v
                         />
                     ) : (
                         <View className="w-full h-full bg-slate-100 dark:bg-slate-600 items-center justify-center">
-                            <Text className="text-2xl font-bold text-slate-400">{initial}</Text>
+                            <Text className="text-lg font-bold text-slate-400">{initial}</Text>
                         </View>
                     )}
                 </View>
