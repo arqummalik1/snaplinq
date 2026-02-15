@@ -28,10 +28,13 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
         const id = Math.random().toString(36).substring(2, 9);
         setToasts((prev) => [...prev, { id, message, type }]);
 
-        // Auto remove after 3 seconds
-        setTimeout(() => {
+        // Auto remove after 3 seconds with cleanup
+        const timeoutId = setTimeout(() => {
             removeToast(id);
         }, 3000);
+        
+        // Store timeout ID for cleanup (optional enhancement)
+        return timeoutId;
     }, [removeToast]);
 
     const success = useCallback((message: string) => showToast(message, 'success'), [showToast]);

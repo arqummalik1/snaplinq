@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { Moon, Search, Sun } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Fonts } from '../../constants/theme';
 import { AddLinkModal } from '../../src/components/dashboard/AddLinkModal';
@@ -16,9 +16,26 @@ export default function Dashboard() {
   const { session, loading } = useAuth();
   const { toggleTheme, isDark } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingLink, setEditingLink] = useState<any>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Debounce search input
+  const handleSearchChange = useCallback((text: string) => {
+    setSearchQuery(text);
+    
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    // Set new timeout for debouncing (300ms)
+    searchTimeoutRef.current = setTimeout(() => {
+      setDebouncedSearch(text);
+    }, 300);
+  }, []);
 
   useEffect(() => {
     if (!loading && !session) {
@@ -26,7 +43,20 @@ export default function Dashboard() {
     }
   }, [session, loading, router]);
 
-  if (loading || !session) return <View className="flex-1 bg-slate-50 dark:bg-slate-900" />;
+  if (loading) {
+    return (
+      <View className="flex-1 bg-slate-50 dark:bg-slate-900 items-center justify-center">
+        <View className="items-center">
+          <Logo width={80} height={80} className="mb-4" />
+          <Text className="text-slate-500 dark:text-slate-400 text-lg">Loading your vault...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (!session) {
+    return <View className="flex-1 bg-slate-50 dark:bg-slate-900" />;
+  }
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-900 relative">
@@ -78,13 +108,13 @@ export default function Dashboard() {
       <TopLiquidSearchBar
         visible={showSearch}
         value={searchQuery}
-        onChangeText={setSearchQuery}
+        onChangeText={handleSearchChange}
         onClose={() => setShowSearch(false)}
       />
 
       {/* Main Content */}
       <LinkGrid
-        searchQuery={searchQuery}
+        searchQuery={debouncedSearch}
         onEdit={(link) => { setEditingLink(link); setShowAddModal(true); }}
         // Padding: Header ~150. Bottom ~150 (Tabs 90 + FAB 64)
         contentContainerStyle={{ paddingTop: 150, paddingBottom: 150 }}

@@ -22,8 +22,8 @@ const LinkItemComponent = ({ link, onEdit }: { link: any, onEdit: (link: any) =>
     const [showMenu, setShowMenu] = useState(false);
     const [imageError, setImageError] = useState(false);
 
-    // Initial for fallback
-    const initial = link.title.charAt(0).toUpperCase();
+    // Initial for fallback - handle null/undefined title safely
+    const initial = link.title?.charAt(0)?.toUpperCase() || '#';
 
     const [showDeleteAlert, setShowDeleteAlert] = useState(false);
 

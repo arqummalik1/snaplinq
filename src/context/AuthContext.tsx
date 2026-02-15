@@ -73,8 +73,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 } else {
                     throw new Error('No ID token present!');
                 }
-            } catch {
-                // Fallback or Alert?
+            } catch (error: any) {
+                // Show error to user via console and handle gracefully
+                console.error('Google Sign-In Error:', error);
+                // Return a structured error that can be caught by the caller
+                throw new Error(error?.message || 'Google Sign-In failed. Please try again.');
             }
         }
     };

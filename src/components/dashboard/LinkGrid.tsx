@@ -41,6 +41,16 @@ export const LinkGrid = ({ searchQuery, onEdit, contentContainerStyle, ListHeade
         );
     }
 
+    // Handle empty search results
+    if (filteredLinks.length === 0 && searchQuery.trim() !== '') {
+        return (
+            <View className="flex-1 items-center justify-center pt-20">
+                <Text className="text-slate-500 text-lg">No results found</Text>
+                <Text className="text-slate-400 text-sm mt-2">Try a different search term</Text>
+            </View>
+        );
+    }
+
     if (filteredLinks.length === 0 && categories.length === 1 && categories[0] === 'Uncategorized') {
         return (
             <View className="flex-1 items-center justify-center pt-20">

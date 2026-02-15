@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useLinkContext } from '../../context/LinkContext';
+import { useToast } from '../../context/ToastContext';
 import { categorizeUrl } from '../../utils/categorize';
 import { generateTitle, getFavicon } from '../../utils/metadata';
 import { Button } from '../ui/Button';
@@ -15,6 +16,7 @@ interface AddLinkModalProps {
 
 export const AddLinkModal = ({ visible, onClose, editLink }: AddLinkModalProps) => {
     const { addLink, updateLink, categories, addCategory } = useLinkContext();
+    const { success, error } = useToast();
     const [loading, setLoading] = useState(false);
 
     const [url, setUrl] = useState('');
@@ -23,6 +25,7 @@ export const AddLinkModal = ({ visible, onClose, editLink }: AddLinkModalProps) 
     const [icon, setIcon] = useState('');
     const [newCat, setNewCat] = useState('');
     const [isAddingCat, setIsAddingCat] = useState(false);
+    const [hasChanges, setHasChanges] = useState(false);
 
     useEffect(() => {
         if (editLink) {
@@ -42,6 +45,18 @@ export const AddLinkModal = ({ visible, onClose, editLink }: AddLinkModalProps) 
         setIcon('');
         setNewCat('');
         setIsAddingCat(false);
+        setHasChanges(false);
+    };
+
+    // Track changes when user modifies any field
+    const handleUrlChange = (text: string) => {
+        setUrl(text);
+        setHasChanges(true);
+    };
+
+    const handleTitleChange = (text: string) => {
+        setTitle(text);
+        setHasChanges(true);
     };
 
     const handleUrlBlur = () => {
@@ -56,8 +71,31 @@ export const AddLinkModal = ({ visible, onClose, editLink }: AddLinkModalProps) 
         if (category === 'Uncategorized') setCategory(autoCat);
     };
 
+    const handleClose = () => {
+        if (hasChanges) {
+            // Show confirmation - for now just close
+            // In production, use Alert.alert for confirmation
+            onClose();
+            resetForm();
+        } else {
+            onClose();
+            resetForm();
+        }
+    };
+
     const handleSubmit = async () => {
-        if (!url || !title) return;
+        if (!url || !title) {
+            error("Please enter a URL and title");
+            return;
+        }
+
+        // Validate URL format
+        try {
+            new URL(url);
+        } catch {
+            error("Please enter a valid URL (e.g., https://example.com)");
+            return;
+        }
 
         setLoading(true);
         try {
@@ -78,7 +116,12 @@ export const AddLinkModal = ({ visible, onClose, editLink }: AddLinkModalProps) 
     };
 
     return (
-        <Modal visible={visible} onClose={onClose} title={editLink ? "Edit Link" : "Add Link"}>
+        <Modal 
+            visible={visible} 
+            onClose={handleClose} 
+            title={editLink ? "Edit Link" : "Add Link"}
+            hasUnsavedChanges={hasChanges}
+        >
             <View className="space-y-4">
                 {/* URL Input */}
                 <Input

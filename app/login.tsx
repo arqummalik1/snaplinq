@@ -14,33 +14,142 @@ export default function Login() {
     const { success, error: showError } = useToast();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [isSignUp, setIsSignUp] = useState(false);
     const [keepLoggedIn, setKeepLoggedIn] = useState(true);
 
+    // Validation functions
+    const validateEmail = (email: string): { valid: boolean; message: string } => {
+        const trimmedEmail = email.trim();
+        
+        if (!trimmedEmail) {
+            return { valid: false, message: "Email is required." };
+        }
+        
+        // Check for spaces in email
+        if (trimmedEmail.includes(' ')) {
+            return { valid: false, message: "Email cannot contain spaces." };
+        }
+        
+        // Strict email regex
+        const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+        
+        if (!emailRegex.test(trimmedEmail)) {
+            return { valid: false, message: "Please enter a valid email address." };
+        }
+        
+        return { valid: true, message: "" };
+    };
+
+    const validatePassword = (password: string): { valid: boolean; message: string } => {
+        if (!password) {
+            return { valid: false, message: "Password is required." };
+        }
+        
+        if (password.length < 6) {
+            return { valid: false, message: "Password must be at least 6 characters." };
+        }
+        
+        return { valid: true, message: "" };
+    };
+
     const handleAuth = async () => {
-        if (!email || !password) {
-            showError("Please fill in all fields.");
+        // Trim email to remove leading/trailing spaces
+        const trimmedEmail = email.trim().toLowerCase();
+        
+        // Validate email
+        const emailValidation = validateEmail(trimmedEmail);
+        if (!emailValidation.valid) {
+            showError(emailValidation.message);
             return;
         }
 
+        // Validate password
+        const passwordValidation = validatePassword(password);
+        if (!passwordValidation.valid) {
+            showError(passwordValidation.message);
+            return;
+        }
+
+        // Validate password confirmation for signup
+        if (isSignUp) {
+            if (password !== confirmPassword) {
+                showError("Passwords do not match.");
+                return;
+            }
+            
+            if (confirmPassword.length === 0) {
+                showError("Please confirm your password.");
+                return;
+            }
+        }
+
         setLoading(true);
-        // Add artificial delay for better UX feel
-        await new Promise(resolve => setTimeout(resolve, 800));
 
         try {
             if (isSignUp) {
-                const { error } = await supabase.auth.signUp({ email, password });
-                if (error) throw error;
-                success("Confirmation link sent to your email.");
+                const { error } = await supabase.auth.signUp({ 
+                    email: trimmedEmail, 
+                    password,
+                    options: {
+                        data: {}
+                    }
+                });
+                
+                if (error) {
+                    // Handle specific signup errors
+                    switch (error.message.toLowerCase()) {
+                        case 'user already registered':
+                        case 'email rate limit exceeded':
+                            showError("An account with this email already exists.");
+                            break;
+                        case 'invalid email':
+                            showError("Please enter a valid email address.");
+                            break;
+                        case 'password too short':
+                            showError("Password must be at least 6 characters.");
+                            break;
+                        default:
+                            showError(error.message || "Signup failed. Please try again.");
+                    }
+                    return;
+                }
+                
+                success("Account created! Please check your email to verify your account.");
+                // Switch to login mode after successful signup
+                setIsSignUp(false);
+                setPassword('');
+                setConfirmPassword('');
             } else {
-                const { error } = await supabase.auth.signInWithPassword({ email, password });
-                if (error) throw error;
+                const { error } = await supabase.auth.signInWithPassword({ 
+                    email: trimmedEmail, 
+                    password
+                });
+                
+                if (error) {
+                    // Handle specific signin errors
+                    const errorMessage = error.message.toLowerCase();
+                    
+                    if (errorMessage.includes('invalid') || errorMessage.includes('credentials')) {
+                        showError("Invalid email or password. Please try again.");
+                    } else if (errorMessage.includes('email not confirmed')) {
+                        showError("Please verify your email first. Check your inbox for the confirmation link.");
+                    } else if (errorMessage.includes('rate limit')) {
+                        showError("Too many attempts. Please wait a moment and try again.");
+                    } else {
+                        showError(error.message || "Login failed. Please try again.");
+                    }
+                    return;
+                }
+                
                 success("Welcome back!");
                 router.replace('/');
             }
         } catch (e: any) {
-            showError(e.message || "Authentication failed.");
+            // Catch any unexpected errors
+            console.error("Auth Error:", e);
+            showError("An unexpected error occurred. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -49,10 +158,26 @@ export default function Login() {
     const handleGoogle = async () => {
         try {
             await signInWithGoogle();
-            // Redirect handled by auth state listener in index or _layout
         } catch (e: any) {
-            showError(e.message || "Google Sign-In failed.");
+            // Handle Google sign-in errors specifically
+            const errorMessage = e.message?.toLowerCase() || '';
+            
+            if (errorMessage.includes('play services')) {
+                showError("Google Play Services not available. Please try again.");
+            } else if (errorMessage.includes('cancelled') || errorMessage.includes('cancel')) {
+                // User cancelled - don't show error
+                return;
+            } else {
+                showError(e.message || "Google Sign-In failed. Please try again.");
+            }
         }
+    };
+
+    // Reset form when switching between sign in and sign up
+    const toggleMode = () => {
+        setIsSignUp(!isSignUp);
+        setPassword('');
+        setConfirmPassword('');
     };
 
     return (
@@ -65,14 +190,16 @@ export default function Login() {
                     <Text className="text-2xl font-bold text-slate-900 dark:text-white">
                         {isSignUp ? "Create Account" : "Welcome Back"}
                     </Text>
-                    <Text className="text-slate-500 dark:text-slate-400 mt-1">
-                        Sign in to access your Snaplinq
+                    <Text className="text-slate-500 dark:text-slate-400 mt-1 text-center">
+                        {isSignUp 
+                            ? "Sign up to start organizing your links" 
+                            : "Sign in to access your Snaplinq"
+                        }
                     </Text>
                 </View>
 
                 {/* Google Button */}
                 <Button variant="secondary" onPress={handleGoogle} className="mb-6 flex-row gap-3">
-                    {/* Placeholder for G Icon */}
                     <Text className="font-bold text-lg text-slate-700 dark:text-slate-200">G</Text>
                     <Text>Continue with Google</Text>
                 </Button>
@@ -88,8 +215,13 @@ export default function Login() {
                         label="Email"
                         placeholder="you@example.com"
                         value={email}
-                        onChangeText={setEmail}
+                        onChangeText={(text) => {
+                            // Automatically trim spaces and convert to lowercase
+                            setEmail(text);
+                        }}
                         autoCapitalize="none"
+                        autoCorrect={false}
+                        keyboardType="email-address"
                     />
                     <Input
                         label="Password"
@@ -98,6 +230,17 @@ export default function Login() {
                         onChangeText={setPassword}
                         secureTextEntry
                     />
+                    
+                    {/* Password confirmation for signup */}
+                    {isSignUp && (
+                        <Input
+                            label="Confirm Password"
+                            placeholder="••••••••"
+                            value={confirmPassword}
+                            onChangeText={setConfirmPassword}
+                            secureTextEntry
+                        />
+                    )}
                 </View>
 
                 {/* Keep me logged in */}
@@ -107,7 +250,7 @@ export default function Login() {
                         <Switch
                             value={keepLoggedIn}
                             onValueChange={setKeepLoggedIn}
-                            trackColor={{ false: '#cbd5e1', true: '#10b981' }} // Emerald green
+                            trackColor={{ false: '#cbd5e1', true: '#10b981' }}
                         />
                     </View>
                 )}
@@ -120,7 +263,7 @@ export default function Login() {
                     <Text className="text-slate-500 dark:text-slate-400">
                         {isSignUp ? "Already have an account? " : "Don't have an account? "}
                     </Text>
-                    <Pressable onPress={() => setIsSignUp(!isSignUp)}>
+                    <Pressable onPress={toggleMode}>
                         <Text className="text-emerald-500 font-bold">
                             {isSignUp ? "Sign In" : "Sign Up"}
                         </Text>
