@@ -1,14 +1,15 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Plus } from 'lucide-react-native';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View, ViewStyle } from 'react-native';
 
 interface FloatingActionButtonProps {
     onPress: () => void;
+    style?: ViewStyle;
 }
 
-export const FloatingActionButton = ({ onPress }: FloatingActionButtonProps) => {
+export const FloatingActionButton = ({ onPress, style }: FloatingActionButtonProps) => {
     return (
-        <View style={styles.container} pointerEvents="box-none">
+        <View style={[styles.container, style]} pointerEvents="box-none">
             <Pressable
                 onPress={onPress}
                 style={({ pressed }) => [
@@ -35,10 +36,9 @@ export const FloatingActionButton = ({ onPress }: FloatingActionButtonProps) => 
 const styles = StyleSheet.create({
     container: {
         position: 'absolute',
-        bottom: 24, // Safe area + padding
+        bottom: 24, // Default, can be overridden
         right: 24,
         zIndex: 50,
-        // Ensure touches pass through the container but catch on the button
         ...Platform.select({
             web: { position: 'fixed' as any }
         })
@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.3,
         shadowRadius: 12,
-        elevation: 8, // Android shadow
+        elevation: 8,
     },
     pressed: {
         transform: [{ scale: 0.92 }],
@@ -63,13 +63,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1.5,
-        borderColor: 'rgba(255,255,255,0.2)', // Glass edge
+        borderColor: 'rgba(255,255,255,0.2)',
         overflow: 'hidden',
-        ...Platform.select({
-            web: { backdropFilter: 'blur(10px)' } as any,
-            default: {}
-        })
-    },
+        ...(Platform.OS === 'web' ? { backdropFilter: 'blur(10px)' } : {}),
+    } as any,
     shine: {
         position: 'absolute',
         top: 0,

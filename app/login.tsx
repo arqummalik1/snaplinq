@@ -1,15 +1,17 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, Switch, Text, View } from 'react-native';
+import { Pressable, Switch, Text, View } from 'react-native';
 import { Button } from '../src/components/ui/Button';
 import { Input } from '../src/components/ui/Input';
 import { Logo } from '../src/components/ui/Logo';
 import { useAuth } from '../src/context/AuthContext';
+import { useToast } from '../src/context/ToastContext';
 import { supabase } from '../src/lib/supabase';
 
 export default function Login() {
     const router = useRouter();
     const { signInWithGoogle } = useAuth();
+    const { success, error: showError } = useToast();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -17,19 +19,28 @@ export default function Login() {
     const [keepLoggedIn, setKeepLoggedIn] = useState(true);
 
     const handleAuth = async () => {
+        if (!email || !password) {
+            showError("Please fill in all fields.");
+            return;
+        }
+
         setLoading(true);
+        // Add artificial delay for better UX feel
+        await new Promise(resolve => setTimeout(resolve, 800));
+
         try {
             if (isSignUp) {
                 const { error } = await supabase.auth.signUp({ email, password });
                 if (error) throw error;
-                Alert.alert("Check your email", "We sent you a confirmation link.");
+                success("Confirmation link sent to your email.");
             } else {
                 const { error } = await supabase.auth.signInWithPassword({ email, password });
                 if (error) throw error;
+                success("Welcome back!");
                 router.replace('/');
             }
         } catch (e: any) {
-            Alert.alert("Error", e.message);
+            showError(e.message || "Authentication failed.");
         } finally {
             setLoading(false);
         }
@@ -40,7 +51,7 @@ export default function Login() {
             await signInWithGoogle();
             // Redirect handled by auth state listener in index or _layout
         } catch (e: any) {
-            Alert.alert("Google Sign-In Error", e.message);
+            showError(e.message || "Google Sign-In failed.");
         }
     };
 
@@ -50,7 +61,7 @@ export default function Login() {
 
                 {/* Logo */}
                 <View className="items-center mb-8">
-                    <Logo className="mb-4" width={80} height={80} />
+                    <Logo className="mb-4" width={90} height={90} />
                     <Text className="text-2xl font-bold text-slate-900 dark:text-white">
                         {isSignUp ? "Create Account" : "Welcome Back"}
                     </Text>
@@ -61,7 +72,7 @@ export default function Login() {
 
                 {/* Google Button */}
                 <Button variant="secondary" onPress={handleGoogle} className="mb-6 flex-row gap-3">
-                    {/* Simple G Text for now, replace with SVG if possible */}
+                    {/* Placeholder for G Icon */}
                     <Text className="font-bold text-lg text-slate-700 dark:text-slate-200">G</Text>
                     <Text>Continue with Google</Text>
                 </Button>
@@ -96,7 +107,7 @@ export default function Login() {
                         <Switch
                             value={keepLoggedIn}
                             onValueChange={setKeepLoggedIn}
-                            trackColor={{ false: '#cbd5e1', true: '#34d399' }}
+                            trackColor={{ false: '#cbd5e1', true: '#10b981' }} // Emerald green
                         />
                     </View>
                 )}

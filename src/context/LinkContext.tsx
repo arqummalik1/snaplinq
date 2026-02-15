@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
@@ -36,7 +36,7 @@ export const LinkProvider = ({ children }: { children: React.ReactNode }) => {
         'Uncategorized', 'Coding', 'Design', 'Reading', 'Music', 'Social', 'AI Tools', 'News', 'Travel'
     ]);
 
-    const refresh = async () => {
+    const refresh = useCallback(async () => {
         if (!session?.user) {
             setLinks([]);
             return;
@@ -56,11 +56,11 @@ export const LinkProvider = ({ children }: { children: React.ReactNode }) => {
             setCategories(prev => Array.from(new Set([...prev, ...usedCategories])));
         }
         setLoading(false);
-    };
+    }, [session]);
 
     useEffect(() => {
         if (session) refresh();
-    }, [session]);
+    }, [session, refresh]);
 
     const addLink = async (link: Partial<Link>) => {
         if (!session?.user) return;
@@ -86,9 +86,21 @@ export const LinkProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     const deleteLink = async (id: string) => {
-        const { error } = await supabase.from('links').delete().eq('id', id);
-        if (error) throw error;
-        refresh();
+        try {
+            const { error } = await supabase.from('links').delete().eq('id', id);
+            if (error) throw error;
+
+            // Optimistic update: remove from local state immediately
+            setLinks(prev => prev.filter(l => l.id !== id));
+
+            // Also update categories if needed (if it was the last link in a category?)
+            // Actually, we keep categories even if empty usually, or refresh handles it.
+            // But refreshing strictly for categories might be overkill if we just deleted one link.
+            // We can skip refresh() to make it instant.
+        } catch (e) {
+            console.error("Delete Error:", e);
+            throw e;
+        }
     };
 
     // Local category mgmt (simple version, just updates state until link added)
@@ -170,8 +182,8 @@ export const LinkProvider = ({ children }: { children: React.ReactNode }) => {
     );
 };
 
-export const useLinks = () => {
+export const useLinkContext = () => {
     const context = useContext(LinkContext);
-    if (!context) throw new Error('useLinks must be used within LinkProvider');
+    if (!context) throw new Error('useLinkContext must be used within LinkProvider');
     return context;
 };

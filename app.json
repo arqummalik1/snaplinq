@@ -23,11 +23,15 @@
       "package": "com.snaplinq.app"
     },
     "web": {
-      "favicon": "./assets/images/favicon.png",
+      "favicon": "./assets/logo/light.png",
       "bundler": "metro",
+      "output": "static",
       "name": "Snaplinq",
       "shortName": "Snaplinq",
-      "description": "Your personal link vault"
+      "description": "Your personal link vault",
+      "meta": {
+        "viewport": "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+      }
     },
     "scheme": "snaplinq",
     "plugins": [

@@ -1,22 +1,24 @@
 import { Trash2 } from 'lucide-react-native';
+import { useMemo } from 'react';
 import { FlatList, Pressable, Text, useWindowDimensions, View } from 'react-native';
-import { useLinks } from '../../context/LinkContext';
+import { useLinkContext } from '../../context/LinkContext';
 import { LinkItem } from './LinkItem';
 
 interface LinkGridProps {
     searchQuery: string;
     onEdit: (link: any) => void;
     contentContainerStyle?: any;
+    ListHeaderComponent?: any;
 }
 
-export const LinkGrid = ({ searchQuery, onEdit, contentContainerStyle }: LinkGridProps) => {
-    const { links, categories, deleteCategory, loading } = useLinks();
+export const LinkGrid = ({ searchQuery, onEdit, contentContainerStyle, ListHeaderComponent }: LinkGridProps) => {
+    const { links, categories, deleteCategory, loading } = useLinkContext();
     const { width } = useWindowDimensions();
 
     // Responsive columns
-    // Mobile: 3 columns for clean spacing
+    // Mobile: 4 columns for denser grid as requested
     // Tablet/Desktop: progressively more
-    const numColumns = width < 640 ? 3 : width < 1024 ? 5 : width < 1280 ? 7 : 9;
+    const numColumns = width < 640 ? 4 : width < 1024 ? 6 : width < 1280 ? 8 : 10;
 
     // Filter links
     const filteredLinks = links.filter(link =>
@@ -25,11 +27,11 @@ export const LinkGrid = ({ searchQuery, onEdit, contentContainerStyle }: LinkGri
     );
 
     // Group items for SectionList
-    const sections = categories
+    const sections = useMemo(() => categories
         .map(category => ({
             title: category,
-            data: filteredLinks.filter(l => (l.category || 'Uncategorized') === category)
-        }));
+            data: filteredLinks.filter(l => (l.category || 'Uncategorized') === category) // Note: This filter is O(N*M), could be optimized but fine for <1000 links
+        })), [categories, filteredLinks]);
 
     if (loading) {
         return (
@@ -87,7 +89,7 @@ export const LinkGrid = ({ searchQuery, onEdit, contentContainerStyle }: LinkGri
                             <View>
                                 {chunkedData.map((row, rowIndex) => (
                                     <View key={rowIndex} className="flex-row justify-between mb-1">
-                                        {row.map((link) => (
+                                        {row.map((link: any) => (
                                             <View key={link.id} style={{ width: `${100 / numColumns}%` }} className="items-center">
                                                 <LinkItem link={link} onEdit={onEdit} />
                                             </View>

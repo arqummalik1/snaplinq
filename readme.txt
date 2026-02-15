@@ -290,13 +290,20 @@ RESPONSIVE BREAKPOINTS
 
 APP ICONS
 ─────────
-  assets/icon.png            — Main app icon (square, 1024x1024)
-  assets/adaptive-icon.png   — Android adaptive icon foreground
-  assets/images/favicon.png  — Web favicon
-  assets/images/splash-icon.png — Splash screen center icon
+  assets/icon.png            — Main app icon (Fluid S mark, emerald/cyan gradient)
+  assets/adaptive-icon.png   — Android adaptive icon (same as main icon)
+  assets/favicon.png         — Web favicon
+  assets/splash.png          — Splash screen image
 
-  Icon Design: Emerald-to-cyan gradient background with chain link symbol
-  (Generated via AI image tool, Snaplinq branded)
+  All icons utilize the new premium Snaplinq branding:
+  - An abstract fluid "S" shape.
+  - Gradient: Emerald (#10b981) to Ocean Blue (#06b6d4).
+  - Modern, minimalist, and vector-style.
+
+UI LOGOS
+────────
+  assets/images/logo-light.png — Full logo (Icon + Dark Text) for Light Mode
+  assets/images/logo-dark.png  — Full logo (Icon + White Text) for Dark Mode
 
 UI ICONS (Lucide React Native)
 ──────────────────────────────
@@ -311,14 +318,18 @@ All icons from the "lucide-react-native" package (v0.564.0):
   ExternalLink  — (Available, not currently rendered in UI)
   Trash2        — Delete action (link options modal, category delete)
   Edit2         — (Available, not currently rendered in UI)
+  CheckCircle   — Success Toast icon
+  AlertCircle   — Error Toast icon
+  Info          — Info Toast icon
+  X             — Toast dismiss icon
 
   Icon sizes used:
-    16px — MoreVertical (link card), Trash2 (category delete)
-    20px — Search (search bar)
+    16px — MoreVertical (link card), Trash2 (category delete), Toast dismiss
+    20px — Search (search bar), Toast icons
     24px — Sun, Moon, Plus, LogOut (header actions)
 
   Icon colors:
-    White (#ffffff)          — Plus icon on emerald FAB
+    White (#ffffff)          — Plus icon on emerald FAB, Toast icons
     #fcd34d (yellow-300)     — Sun icon (dark mode)
     #475569 (slate-600)      — Moon icon (light mode)
     #94a3b8 (slate-400)      — MoreVertical, Search (dark), Trash2

@@ -22,24 +22,21 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
             const saved = await AsyncStorage.getItem('snaplinq_theme');
             if (saved) {
                 setThemeState(saved as Theme);
-                setColorScheme(saved as Theme); // NativeWind handles system if 'system' passed? strict typing might fail
-                // correct usage: setColorScheme('light' | 'dark' | 'system')
+                setColorScheme(saved as Theme as any);
             }
         };
         loadTheme();
-    }, []);
+    }, [setColorScheme]);
 
     const setTheme = async (newTheme: Theme) => {
         setThemeState(newTheme);
-        setColorScheme(newTheme);
+        setColorScheme(newTheme as any);
         await AsyncStorage.setItem('snaplinq_theme', newTheme);
     };
 
     const toggleTheme = () => {
         const next = colorScheme === 'dark' ? 'light' : 'dark';
-        setThemeState(next);
-        setColorScheme(next);
-        AsyncStorage.setItem('snaplinq_theme', next);
+        setTheme(next);
     };
 
     return (
@@ -47,7 +44,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
             theme,
             setTheme,
             toggleTheme,
-            isDark: colorScheme === 'dark'
+            isDark: colorScheme === 'dark',
         }}>
             {children}
         </ThemeContext.Provider>

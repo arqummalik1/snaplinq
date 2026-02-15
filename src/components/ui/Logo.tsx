@@ -1,24 +1,20 @@
-import { Image, ImageProps, useColorScheme } from 'react-native';
+import { Image, View } from 'react-native';
+import { useTheme } from '../../context/ThemeContext';
 
-interface LogoProps extends Omit<ImageProps, 'source'> {
-    className?: string;
-    width?: number;
-    height?: number;
-}
-
-export function Logo({ className, width = 120, height = 40, style, ...props }: LogoProps) {
-    const colorScheme = useColorScheme();
-    const isDark = colorScheme === 'dark';
+export const Logo = ({ width = 40, height = 40, className }: { width?: number, height?: number, className?: string }) => {
+    const { isDark } = useTheme();
+    // Use require for assets
+    const source = isDark
+        ? require('../../../assets/logo/dark.png')
+        : require('../../../assets/logo/light.png');
 
     return (
-        <Image
-            source={isDark
-                ? require('../../../assets/images/logo-dark.png')
-                : require('../../../assets/images/logo-light.png')
-            }
-            style={[{ width, height, resizeMode: 'contain' }, style]}
-            className={className}
-            {...props}
-        />
+        <View className={`items-center justify-center ${className}`} style={{ width, height }}>
+            <Image
+                source={source}
+                style={{ width, height }}
+                resizeMode="contain"
+            />
+        </View>
     );
-}
+};

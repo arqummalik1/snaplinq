@@ -1,10 +1,11 @@
+import { Image } from 'expo-image';
 import * as WebBrowser from 'expo-web-browser';
 import { MoreHorizontal } from 'lucide-react-native';
 import { memo, useState } from 'react';
-import { Alert, Image, Platform, Pressable, Text, View } from 'react-native';
-import { useLinks } from '../../context/LinkContext';
-import { Button } from '../ui/Button';
-import { Modal } from '../ui/Modal';
+import { Platform, Pressable, Text, View } from 'react-native';
+import { LiquidAlert } from '../../components/ui/LiquidAlert';
+import { useLinkContext } from '../../context/LinkContext';
+import { LinkOptionsSheet } from './LinkOptionsSheet';
 
 // Utility to start web browser
 const openLink = async (url: string) => {
@@ -15,25 +16,33 @@ const openLink = async (url: string) => {
     }
 };
 
-export const LinkItem = memo(({ link, onEdit }: { link: any, onEdit: (link: any) => void }) => {
-    const { deleteLink } = useLinks();
+
+const LinkItemComponent = ({ link, onEdit }: { link: any, onEdit: (link: any) => void }) => {
+    const { deleteLink } = useLinkContext();
     const [showMenu, setShowMenu] = useState(false);
     const [imageError, setImageError] = useState(false);
 
     // Initial for fallback
     const initial = link.title.charAt(0).toUpperCase();
 
-    const handleDelete = () => {
-        Alert.alert(
-            "Delete Link",
-            "Are you sure you want to delete this link?",
-            [
-                { text: "Cancel", style: "cancel" },
-                { text: "Delete", style: "destructive", onPress: () => deleteLink(link.id) }
-            ]
-        );
+    const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+
+    const handleDeleteClick = () => {
         setShowMenu(false);
+        setShowDeleteAlert(true);
     };
+
+    const confirmDelete = async () => {
+        try {
+            await deleteLink(link.id);
+        } catch (e) {
+            console.error(e);
+            alert("Failed to delete"); // Fallback for error
+        } finally {
+            setShowDeleteAlert(false);
+        }
+    };
+
 
     return (
         <View className="items-center mb-6">
@@ -48,8 +57,8 @@ export const LinkItem = memo(({ link, onEdit }: { link: any, onEdit: (link: any)
                     {!imageError && link.icon ? (
                         <Image
                             source={{ uri: link.icon }}
-                            className="w-full h-full"
-                            resizeMode="cover"
+                            style={{ width: '100%', height: '100%' }}
+                            contentFit="cover"
                             onError={() => setImageError(true)}
                         />
                     ) : (
@@ -81,21 +90,26 @@ export const LinkItem = memo(({ link, onEdit }: { link: any, onEdit: (link: any)
                 </Pressable>
             )}
 
-            {/* Configurable Menu Modal */}
-            <Modal visible={showMenu} onClose={() => setShowMenu(false)} title={link.title}>
-                <View className="space-y-3">
-                    <Button variant="secondary" onPress={() => openLink(link.url)}>
-                        Open Link
-                    </Button>
-                    <Button variant="secondary" onPress={() => { setShowMenu(false); onEdit(link); }}>
-                        Edit Link
-                    </Button>
-                    <Button variant="danger" onPress={handleDelete}>
-                        Delete Link
-                    </Button>
-                </View>
-            </Modal>
+            <LinkOptionsSheet
+                visible={showMenu}
+                onClose={() => setShowMenu(false)}
+                onOpen={() => { setShowMenu(false); openLink(link.url); }}
+                onEdit={() => { setShowMenu(false); onEdit(link); }}
+                onDelete={handleDeleteClick}
+            />
+
+            <LiquidAlert
+                visible={showDeleteAlert}
+                title="Delete Link"
+                message="Are you sure you want to delete this link? This action cannot be undone."
+                onClose={() => setShowDeleteAlert(false)}
+                onConfirm={confirmDelete}
+                confirmText="Delete"
+                cancelText="Cancel"
+            />
         </View>
     );
-});
+};
 
+LinkItemComponent.displayName = 'LinkItem';
+export const LinkItem = memo(LinkItemComponent);

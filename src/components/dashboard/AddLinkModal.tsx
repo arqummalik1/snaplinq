@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { useLinks } from '../../context/LinkContext';
+import { useLinkContext } from '../../context/LinkContext';
 import { categorizeUrl } from '../../utils/categorize';
 import { generateTitle, getFavicon } from '../../utils/metadata';
 import { Button } from '../ui/Button';
@@ -14,7 +14,7 @@ interface AddLinkModalProps {
 }
 
 export const AddLinkModal = ({ visible, onClose, editLink }: AddLinkModalProps) => {
-    const { addLink, updateLink, categories, addCategory } = useLinks();
+    const { addLink, updateLink, categories, addCategory } = useLinkContext();
     const [loading, setLoading] = useState(false);
 
     const [url, setUrl] = useState('');

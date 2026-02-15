@@ -1,9 +1,9 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { type User, type Session } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
-import { Platform } from 'react-native';
-import * as WebBrowser from 'expo-web-browser';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { type Session, type User } from '@supabase/supabase-js';
+import * as WebBrowser from 'expo-web-browser';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { Platform } from 'react-native';
+import { supabase } from '../lib/supabase';
 
 interface AuthContextType {
     user: User | null;
@@ -73,8 +73,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 } else {
                     throw new Error('No ID token present!');
                 }
-            } catch (error) {
-                console.error("Google Signin Error:", error);
+            } catch {
                 // Fallback or Alert?
             }
         }
@@ -84,7 +83,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (Platform.OS !== 'web') {
             try {
                 await GoogleSignin.signOut();
-            } catch (e) {
+            } catch {
                 // ignore if not signed in with google
             }
         }

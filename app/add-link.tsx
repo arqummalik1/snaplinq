@@ -1,17 +1,18 @@
-import { View, Text, Platform } from 'react-native';
-import { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect, useState } from 'react';
+import { Text, View } from 'react-native';
 import { Button } from '../src/components/ui/Button';
 import { Input } from '../src/components/ui/Input';
-import { useLinks } from '../src/context/LinkContext';
-import { getFavicon, generateTitle } from '../src/utils/metadata';
+import { useLinkContext } from '../src/context/LinkContext';
+import { useToast } from '../src/context/ToastContext';
 import { categorizeUrl } from '../src/utils/categorize';
-import { StatusBar } from 'expo-status-bar';
+import { generateTitle, getFavicon } from '../src/utils/metadata';
 
 export default function AddLinkScreen() {
     const router = useRouter();
     const params = useLocalSearchParams();
-    const { addLink, categories } = useLinks(); // Reusing context
+    const { addLink } = useLinkContext(); // Reusing context
 
     const [url, setUrl] = useState('');
     const [title, setTitle] = useState('');
@@ -29,8 +30,13 @@ export default function AddLinkScreen() {
         }
     }, [params.url]);
 
+    const { success, error } = useToast();
+
     const handleSubmit = async () => {
-        if (!url || !title) return;
+        if (!url || !title) {
+            error("Please enter a URL and title");
+            return;
+        }
         setLoading(true);
         try {
             await addLink({
@@ -39,9 +45,11 @@ export default function AddLinkScreen() {
                 category,
                 icon: getFavicon(url)
             });
+            success("Link added successfully!");
             router.back();
         } catch (e) {
             console.error(e);
+            error("Failed to add link");
         } finally {
             setLoading(false);
         }

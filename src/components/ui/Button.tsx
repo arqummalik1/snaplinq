@@ -1,5 +1,4 @@
-import { Text, Pressable, ActivityIndicator } from 'react-native';
-import { cn } from '../../lib/utils';
+import { ActivityIndicator, Pressable, Text } from 'react-native';
 
 interface ButtonProps {
     onPress: () => void;
