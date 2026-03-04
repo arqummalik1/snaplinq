@@ -5,6 +5,7 @@ import { Platform } from 'react-native';
 import ReceiveSharingIntent from 'react-native-receive-sharing-intent';
 import '../global.css';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
+import { PWAPrompt } from '../src/components/PWAPrompt';
 import { AuthProvider } from '../src/context/AuthContext';
 import { LinkProvider } from '../src/context/LinkContext';
 import { ShareProvider, useShare } from '../src/context/ShareContext';
@@ -21,11 +22,11 @@ function App() {
       if (files[0]?.weblink) {
         setSharedUrl(files[0].weblink);
       }
-    }, 
-    (error: any) => {
-      console.error('Error receiving shared file:', error);
     },
-    'snaplinq' // Add this line
+      (error: any) => {
+        console.error('Error receiving shared file:', error);
+      },
+      'snaplinq' // Add this line
     );
 
     return () => {
@@ -52,6 +53,7 @@ export default function RootLayout() {
             <LinkProvider>
               <ToastProvider>
                 <App />
+                <PWAPrompt />
                 <StatusBar style="auto" />
               </ToastProvider>
             </LinkProvider>
