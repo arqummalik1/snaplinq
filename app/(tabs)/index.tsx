@@ -2,7 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { MoreVertical, Search } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Extrapolate,
   FadeOut,
@@ -20,13 +20,13 @@ import { AppLoader } from '../../src/components/ui/AppLoader';
 import { FloatingActionButton } from '../../src/components/ui/FloatingActionButton';
 import { Logo } from '../../src/components/ui/Logo';
 import { TopLiquidSearchBar } from '../../src/components/ui/TopLiquidSearchBar';
+import { DEBOUNCE_MS } from '../../src/constants';
 import { useAuth } from '../../src/context/AuthContext';
 import { useShare } from '../../src/context/ShareContext';
 import { useTheme } from '../../src/context/ThemeContext';
 
 export default function Dashboard() {
   const router = useRouter();
-  const { width: windowWidth } = useWindowDimensions();
   const { top: safeTop } = useSafeAreaInsets();
   const { session, loading, signOut } = useAuth();
   const { toggleTheme, isDark } = useTheme();
@@ -42,11 +42,13 @@ export default function Dashboard() {
 
   // Scroll animations for header
   const scrollY = useSharedValue(0);
-  const scrollHandler = useAnimatedScrollHandler((event) => {
-    scrollY.value = event.contentOffset.y;
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
   });
 
-  const HEADER_CONTENT_HEIGHT = 64; // Fixed content height (logo row)
+  const HEADER_CONTENT_HEIGHT = 64;
   const HEADER_TOTAL_HEIGHT = safeTop + HEADER_CONTENT_HEIGHT;
 
   const headerStyle = useAnimatedStyle(() => {
@@ -63,7 +65,7 @@ export default function Dashboard() {
       Extrapolate.CLAMP
     );
     return { opacity, transform: [{ translateY }] };
-  });
+  }, []);
 
   const logoStyle = useAnimatedStyle(() => {
     const scale = interpolate(
@@ -73,15 +75,21 @@ export default function Dashboard() {
       Extrapolate.CLAMP
     );
     return { transform: [{ scale }] };
-  });
+  }, []);
 
-  // Debounce search input
+  // Debounce search input cleanup
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    };
+  }, []);
+
   const handleSearchChange = useCallback((text: string) => {
     setSearchQuery(text);
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     searchTimeoutRef.current = setTimeout(() => {
       setDebouncedSearch(text);
-    }, 300);
+    }, DEBOUNCE_MS);
   }, []);
 
   useEffect(() => {
@@ -92,32 +100,30 @@ export default function Dashboard() {
     if (!loading && !session) router.replace('/login');
   }, [session, loading, router]);
 
-  if (loading) return <AppLoader />;
+  const handleSignOut = useCallback(() => {
+    setShowMenu(false);
+    signOut();
+  }, [signOut]);
 
+  const toggleThemeCallback = useCallback(() => {
+    setShowMenu(false);
+    toggleTheme();
+  }, [toggleTheme]);
+
+  if (loading) return <AppLoader />;
   if (!session) return null;
 
   return (
     <View style={{ flex: 1 }} className="bg-slate-50 dark:bg-[#0f172a]">
-
-      {/* ══════════════════════════════════════════════
-          PREMIUM HEADER
-          Fixed height = safeTop + 64px content row
-          Logo left  |  Search + Menu right (top-right corner)
-      ═══════════════════════════════════════════════ */}
       <Animated.View
         style={[headerStyle, { height: HEADER_TOTAL_HEIGHT, paddingTop: safeTop }, styles.headerContainer]}
       >
-        {/* Glass background */}
         <View style={StyleSheet.absoluteFill} className="bg-white/80 dark:bg-[#0f172a]/90" />
-        {/* Web backdrop blur */}
         {Platform.OS === 'web' && (
           <View style={[StyleSheet.absoluteFill, styles.webBlur]} />
         )}
 
-        {/* Content row */}
         <View style={styles.headerContent}>
-
-          {/* LEFT — Logo + Wordmark */}
           <View style={styles.brandRow}>
             <Animated.View style={[logoStyle, styles.logoShadow]}>
               <View style={styles.logoGlow} />
@@ -139,26 +145,22 @@ export default function Dashboard() {
             </View>
           </View>
 
-          {/* RIGHT — Actions pill: Search + Three-dots */}
           <View style={styles.actionsPill} className="bg-white/70 dark:bg-slate-800/70">
-            {/* Search */}
             <Pressable
               onPress={() => setShowSearch(true)}
               style={({ pressed }) => [styles.actionBtn, pressed && styles.actionBtnPressed]}
-              hitSlop={6}
+              hitSlop={12}
             >
               <Search size={19} color={isDark ? '#e2e8f0' : '#334155'} strokeWidth={2.5} />
             </Pressable>
 
-            {/* Divider */}
             <View style={styles.actionDivider} className="bg-slate-200 dark:bg-slate-600" />
 
-            {/* Three-dots menu */}
             <View style={{ position: 'relative' }}>
               <Pressable
                 onPress={() => setShowMenu(!showMenu)}
                 style={({ pressed }) => [styles.actionBtn, pressed && styles.actionBtnPressed]}
-                hitSlop={6}
+                hitSlop={12}
               >
                 <MoreVertical size={19} color={isDark ? '#e2e8f0' : '#334155'} strokeWidth={2.5} />
               </Pressable>
@@ -180,14 +182,14 @@ export default function Dashboard() {
                     <View style={styles.menuItemDot} />
                   </Pressable>
                   <Pressable
-                    onPress={() => { setShowMenu(false); toggleTheme(); }}
+                    onPress={toggleThemeCallback}
                     style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
                   >
                     <Text style={styles.menuItemText} className="text-slate-800 dark:text-white">Theme</Text>
                     <View style={[styles.menuItemDot, { backgroundColor: isDark ? '#fbbf24' : '#1e293b', width: 12, height: 12, borderRadius: 6 }]} />
                   </Pressable>
                   <Pressable
-                    onPress={() => { setShowMenu(false); signOut(); }}
+                    onPress={handleSignOut}
                     style={({ pressed }) => [styles.menuItemLast, pressed && styles.menuItemPressedDanger]}
                   >
                     <Text style={styles.menuItemDanger}>SIGN OUT</Text>
@@ -198,7 +200,6 @@ export default function Dashboard() {
           </View>
         </View>
 
-        {/* Emerald accent line at the very bottom of header */}
         <LinearGradient
           colors={['transparent', '#10b981', 'transparent']}
           start={{ x: 0, y: 0 }}
@@ -207,7 +208,6 @@ export default function Dashboard() {
         />
       </Animated.View>
 
-      {/* Top Liquid Search Overlay */}
       <TopLiquidSearchBar
         visible={showSearch}
         value={searchQuery}
@@ -215,21 +215,19 @@ export default function Dashboard() {
         onClose={() => setShowSearch(false)}
       />
 
-      {/* Main Content */}
       <LinkGrid
         searchQuery={debouncedSearch}
         onEdit={(link) => { setEditingLink(link); setShowAddModal(true); }}
+        onAddLink={() => { setEditingLink(null); setShowAddModal(true); }}
         contentContainerStyle={{ paddingTop: HEADER_TOTAL_HEIGHT + 12, paddingBottom: 100 }}
         onScroll={scrollHandler}
       />
 
-      {/* FAB */}
       <FloatingActionButton
         onPress={() => { setEditingLink(null); setShowAddModal(true); }}
         style={{ bottom: 36 }}
       />
 
-      {/* Add/Edit Modal */}
       <AddLinkModal
         visible={showAddModal}
         onClose={() => {
@@ -251,7 +249,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 40,
-    justifyContent: 'flex-end', // push content to bottom of header
+    justifyContent: 'flex-end',
     ...(Platform.OS === 'web' ? {
       backdropFilter: 'blur(24px) saturate(180%)',
       WebkitBackdropFilter: 'blur(24px) saturate(180%)',
@@ -289,9 +287,6 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     transform: [{ scale: 1.5 }],
   },
-  logoRadius: {
-    borderRadius: 14,
-  },
   appName: {
     fontSize: 20,
     fontWeight: '900',
@@ -316,14 +311,13 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     textTransform: 'uppercase',
   },
-  // ── Actions pill ──────────────────────────────────
   actionsPill: {
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 16,
     borderWidth: 1,
     borderColor: 'rgba(148,163,184,0.25)',
-    overflow: 'hidden',
+    // Removed overflow: 'hidden' to allow dropdown menu visibility
     ...(Platform.OS === 'web' ? {
       backdropFilter: 'blur(16px)',
       WebkitBackdropFilter: 'blur(16px)',
@@ -349,7 +343,6 @@ const styles = StyleSheet.create({
     width: StyleSheet.hairlineWidth,
     height: 20,
   },
-  // ── Dropdown menu ─────────────────────────────────
   menu: {
     position: 'absolute',
     top: 50,
@@ -410,7 +403,6 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     textTransform: 'uppercase',
   },
-  // ── Accent line ───────────────────────────────────
   accentLine: {
     position: 'absolute',
     bottom: 0,

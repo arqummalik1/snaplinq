@@ -1,11 +1,13 @@
+import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as WebBrowser from 'expo-web-browser';
 import { MoreHorizontal } from 'lucide-react-native';
-import { memo, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { Alert, Platform, Pressable, Text, View } from 'react-native';
 import { LiquidAlert } from '../../components/ui/LiquidAlert';
 import { useLinkContext } from '../../context/LinkContext';
+import { Link } from '../../types';
 import { LinkOptionsSheet } from './LinkOptionsSheet';
 
 // Utility to open link in browser
@@ -32,33 +34,43 @@ const getFallbackColors = (title: string) => {
     return FALLBACK_COLORS[charCode % FALLBACK_COLORS.length];
 };
 
-const LinkItemComponent = ({ link, onEdit }: { link: any, onEdit: (link: any) => void }) => {
+interface LinkItemProps {
+    link: Link;
+    onEdit: (link: Link) => void;
+}
+
+const LinkItemComponent = ({ link, onEdit }: LinkItemProps) => {
     const { deleteLink, markVisited } = useLinkContext();
     const [showMenu, setShowMenu] = useState(false);
     const [imageError, setImageError] = useState(false);
-
-    // Initial for fallback
-    const title = link.title || 'App';
-    const initial = title.charAt(0).toUpperCase();
-    const colors = getFallbackColors(title) as [string, string];
-
     const [showDeleteAlert, setShowDeleteAlert] = useState(false);
 
-    const handlePress = async () => {
+    // Initial for fallback
+    const title = useMemo(() => link.title || 'App', [link.title]);
+    const initial = useMemo(() => title.charAt(0).toUpperCase(), [title]);
+    const colors = useMemo(() => getFallbackColors(title) as [string, string], [title]);
+
+    const handlePress = useCallback(async () => {
         try {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             await markVisited(link.id);
             await openLink(link.url);
         } catch (e) {
-            console.error("Link Open Error:", e);
+            console.error('Link Open Error:', e);
         }
-    };
+    }, [link.id, link.url, markVisited]);
 
-    const handleDeleteClick = () => {
+    const handleLongPress = useCallback(() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        setShowMenu(true);
+    }, []);
+
+    const handleDeleteClick = useCallback(() => {
         setShowMenu(false);
         setShowDeleteAlert(true);
-    };
+    }, []);
 
-    const confirmDelete = async () => {
+    const confirmDelete = useCallback(async () => {
         try {
             await deleteLink(link.id);
         } catch (e) {
@@ -67,14 +79,13 @@ const LinkItemComponent = ({ link, onEdit }: { link: any, onEdit: (link: any) =>
         } finally {
             setShowDeleteAlert(false);
         }
-    };
-
+    }, [deleteLink, link.id]);
 
     return (
         <View className="items-center w-[84px] sm:w-[100px] mb-6">
             <Pressable
                 onPress={handlePress}
-                onLongPress={() => setShowMenu(true)}
+                onLongPress={handleLongPress}
                 delayLongPress={500}
                 className="group items-center w-full"
             >
@@ -85,6 +96,8 @@ const LinkItemComponent = ({ link, onEdit }: { link: any, onEdit: (link: any) =>
                             source={{ uri: link.icon }}
                             style={{ width: '100%', height: '100%' }}
                             contentFit="cover"
+                            cachePolicy="memory-disk"
+                            transition={200}
                             onError={() => setImageError(true)}
                         />
                     ) : (
@@ -110,9 +123,7 @@ const LinkItemComponent = ({ link, onEdit }: { link: any, onEdit: (link: any) =>
                 {/* Highly Readable Elite Typography */}
                 <View className="h-[32px] justify-start items-center px-1">
                     <Text
-                        className={`text-[11px] sm:text-[12px] font-bold text-center leading-tight tracking-tight transition-colors ${link.visited
-                                ? 'text-slate-400 dark:text-slate-500'
-                                : 'text-slate-800 dark:text-slate-100'
+                        className={`text-[11px] sm:text-[12px] font-bold text-center leading-tight tracking-tight transition-colors ${link.visited ? 'text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-slate-100'
                             } group-hover:text-emerald-500 dark:group-hover:text-emerald-400`}
                         numberOfLines={2}
                         ellipsizeMode="tail"
@@ -138,8 +149,14 @@ const LinkItemComponent = ({ link, onEdit }: { link: any, onEdit: (link: any) =>
             <LinkOptionsSheet
                 visible={showMenu}
                 onClose={() => setShowMenu(false)}
-                onOpen={() => { setShowMenu(false); openLink(link.url); }}
-                onEdit={() => { setShowMenu(false); onEdit(link); }}
+                onOpen={() => {
+                    setShowMenu(false);
+                    openLink(link.url);
+                }}
+                onEdit={() => {
+                    setShowMenu(false);
+                    onEdit(link);
+                }}
                 onDelete={handleDeleteClick}
             />
 

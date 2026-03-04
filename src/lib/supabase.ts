@@ -1,20 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import { Platform } from 'react-native';
+import { ENV } from '../config/env';
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
-
-// Validate environment variables to prevent crashes
-if (!supabaseUrl) {
-  console.error('CRITICAL: Missing EXPO_PUBLIC_SUPABASE_URL environment variable');
-  throw new Error('Missing EXPO_PUBLIC_SUPABASE_URL. Please add it to your .env file.');
-}
-
-if (!supabaseAnonKey) {
-  console.error('CRITICAL: Missing EXPO_PUBLIC_SUPABASE_ANON_KEY environment variable');
-  throw new Error('Missing EXPO_PUBLIC_SUPABASE_ANON_KEY. Please add it to your .env file.');
-}
+const supabaseUrl = ENV.SUPABASE_URL;
+const supabaseAnonKey = ENV.SUPABASE_ANON_KEY;
 
 const ExpoSecureStoreAdapter = {
     getItem: (key: string) => {
@@ -28,14 +18,17 @@ const ExpoSecureStoreAdapter = {
     },
 };
 
-export const supabase = createClient(supabaseUrl!, supabaseAnonKey!, {
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
-        storage: Platform.OS === 'web' && typeof window === 'undefined' ?
-            { // SSR Mock
-                getItem: () => Promise.resolve(null),
-                setItem: () => Promise.resolve(),
-                removeItem: () => Promise.resolve(),
-            } : ExpoSecureStoreAdapter,
+        storage:
+            Platform.OS === 'web' && typeof window === 'undefined'
+                ? {
+                    // SSR Mock
+                    getItem: () => Promise.resolve(null),
+                    setItem: () => Promise.resolve(),
+                    removeItem: () => Promise.resolve(),
+                }
+                : ExpoSecureStoreAdapter,
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: true, // Enable session detection from URL for Web OAuth

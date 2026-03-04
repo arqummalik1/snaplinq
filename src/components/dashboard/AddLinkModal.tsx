@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useLinkContext } from '../../context/LinkContext';
 import { useToast } from '../../context/ToastContext';
+import { Link, LinkPatch, NewLink } from '../../types';
 import { categorizeUrl } from '../../utils/categorize';
-import { generateTitle, getFavicon } from '../../utils/metadata';
+import { generateTitle } from '../../utils/metadata';
+import { getFavicon, isValidUrl, normalizeUrl } from '../../utils/url';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Modal } from '../ui/Modal';
@@ -11,7 +13,7 @@ import { Modal } from '../ui/Modal';
 interface AddLinkModalProps {
     visible: boolean;
     onClose: () => void;
-    editLink?: any;
+    editLink?: Link | null;
     sharedUrl?: string | null;
     onClearShare?: () => void;
 }
@@ -29,26 +31,7 @@ export const AddLinkModal = ({ visible, onClose, editLink, sharedUrl, onClearSha
     const [isAddingCat, setIsAddingCat] = useState(false);
     const [hasChanges, setHasChanges] = useState(false);
 
-    useEffect(() => {
-        if (editLink) {
-            setUrl(editLink.url);
-            setTitle(editLink.title);
-            setCategory(editLink.category);
-            setIcon(editLink.icon || '');
-        } else if (sharedUrl) {
-            setUrl(sharedUrl);
-            const autoTitle = generateTitle(sharedUrl);
-            const autoIcon = getFavicon(sharedUrl);
-            const autoCat = categorizeUrl(sharedUrl);
-            setTitle(autoTitle);
-            setIcon(autoIcon);
-            setCategory(autoCat);
-        } else {
-            resetForm();
-        }
-    }, [editLink, sharedUrl, visible]);
-
-    const resetForm = () => {
+    const resetForm = useCallback(() => {
         setUrl('');
         setTitle('');
         setCategory('Uncategorized');
@@ -59,9 +42,30 @@ export const AddLinkModal = ({ visible, onClose, editLink, sharedUrl, onClearSha
         if (onClearShare) {
             onClearShare();
         }
-    };
+    }, [onClearShare]);
 
-    // Track changes when user modifies any field
+    useEffect(() => {
+        if (editLink) {
+            setUrl(editLink.url);
+            setTitle(editLink.title);
+            setCategory(editLink.category);
+            setIcon(editLink.icon || '');
+            setHasChanges(false);
+        } else if (sharedUrl) {
+            const normalized = normalizeUrl(sharedUrl);
+            setUrl(normalized);
+            const autoTitle = generateTitle(normalized);
+            const autoIcon = getFavicon(normalized);
+            const autoCat = categorizeUrl(normalized);
+            setTitle(autoTitle);
+            setIcon(autoIcon);
+            setCategory(autoCat);
+            setHasChanges(true); // Since we autopopulated from share intent
+        } else if (visible) {
+            resetForm();
+        }
+    }, [editLink, sharedUrl, visible, resetForm]);
+
     const handleUrlChange = (text: string) => {
         setUrl(text);
         setHasChanges(true);
@@ -74,10 +78,14 @@ export const AddLinkModal = ({ visible, onClose, editLink, sharedUrl, onClearSha
 
     const handleUrlBlur = () => {
         if (!url) return;
-        // Auto-fetch logic
-        const autoTitle = generateTitle(url);
-        const autoIcon = getFavicon(url);
-        const autoCat = categorizeUrl(url);
+
+        const normalized = normalizeUrl(url);
+        setUrl(normalized);
+
+        // Auto-fetch metadata if fields are empty
+        const autoTitle = generateTitle(normalized);
+        const autoIcon = getFavicon(normalized);
+        const autoCat = categorizeUrl(normalized);
 
         if (!title) setTitle(autoTitle);
         if (!icon) setIcon(autoIcon);
@@ -85,45 +93,39 @@ export const AddLinkModal = ({ visible, onClose, editLink, sharedUrl, onClearSha
     };
 
     const handleClose = () => {
-        if (hasChanges) {
-            // Show confirmation - for now just close
-            // In production, use Alert.alert for confirmation
-            onClose();
-            resetForm();
-        } else {
-            onClose();
-            resetForm();
-        }
+        onClose();
+        resetForm();
     };
 
     const handleSubmit = async () => {
-        if (!url || !title) {
-            error("Please enter a URL and title");
+        const normalizedUrl = normalizeUrl(url);
+
+        if (!normalizedUrl || !title) {
+            error('Please enter a URL and title');
             return;
         }
 
-        // Validate URL format
-        try {
-            new URL(url);
-        } catch {
-            error("Please enter a valid URL (e.g., https://example.com)");
+        if (!isValidUrl(normalizedUrl)) {
+            error('Please enter a valid URL (e.g., example.com)');
             return;
         }
 
         setLoading(true);
         try {
-            const linkData = { url, title, category, icon };
-
             if (editLink) {
-                await updateLink(editLink.id, linkData);
+                const patch: LinkPatch = { url: normalizedUrl, title, category, icon };
+                await updateLink(editLink.id, patch);
+                success('Link updated successfully');
             } else {
-                await addLink(linkData);
+                const newLink: NewLink = { url: normalizedUrl, title, category, icon };
+                await addLink(newLink);
+                success('Link added to your vault');
             }
             onClose();
             resetForm();
         } catch (e) {
             console.error(e);
-            error(editLink ? "Failed to update link" : "Failed to add link");
+            error(editLink ? 'Failed to update link' : 'Failed to add link');
         } finally {
             setLoading(false);
         }
@@ -133,7 +135,7 @@ export const AddLinkModal = ({ visible, onClose, editLink, sharedUrl, onClearSha
         <Modal
             visible={visible}
             onClose={handleClose}
-            title={editLink ? "Edit Link" : "Add Link"}
+            title={editLink ? 'Edit Link' : 'Add Link'}
             hasUnsavedChanges={hasChanges}
         >
             <View className="space-y-4">
@@ -145,6 +147,7 @@ export const AddLinkModal = ({ visible, onClose, editLink, sharedUrl, onClearSha
                     onChangeText={handleUrlChange}
                     onBlur={handleUrlBlur}
                     autoCapitalize="none"
+                    autoCorrect={false}
                 />
 
                 {/* Title Input */}
@@ -152,34 +155,48 @@ export const AddLinkModal = ({ visible, onClose, editLink, sharedUrl, onClearSha
                     label="Title"
                     placeholder="My Cool Link"
                     value={title}
-                    onChangeText={setTitle}
+                    onChangeText={handleTitleChange}
                 />
 
-                {/* Icon Input (New: Allow manual override) */}
+                {/* Icon Input */}
                 <Input
                     label="Icon URL (Optional)"
                     placeholder="https://example.com/favicon.ico"
                     value={icon}
-                    onChangeText={setIcon}
+                    onChangeText={(text) => {
+                        setIcon(text);
+                        setHasChanges(true);
+                    }}
                     autoCapitalize="none"
+                    autoCorrect={false}
                 />
 
-                {/* Category Selection (Simple Horizontal Scroll or Dropdown simulator) */}
+                {/* Category Selection */}
                 <View>
-                    <Text className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1 mb-2">Category</Text>
+                    <Text className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1 mb-2">
+                        Category
+                    </Text>
                     <View className="flex-row flex-wrap gap-2">
-                        {categories.map(c => (
+                        {categories.map((c) => (
                             <Pressable
                                 key={c}
-                                onPress={() => setCategory(c)}
-                                className={`px-3 py-1.5 rounded-full border ${category === c ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 dark:border-slate-600'}`}
+                                onPress={() => {
+                                    setCategory(c);
+                                    setHasChanges(true);
+                                }}
+                                className={`px-3 py-1.5 rounded-full border ${category === c
+                                        ? 'bg-emerald-500 border-emerald-500'
+                                        : 'border-slate-300 dark:border-slate-600'
+                                    }`}
                             >
-                                <Text className={`${category === c ? 'text-white' : 'text-slate-600 dark:text-slate-400'} text-xs font-medium`}>
+                                <Text
+                                    className={`${category === c ? 'text-white' : 'text-slate-600 dark:text-slate-400'
+                                        } text-xs font-medium`}
+                                >
                                     {c}
                                 </Text>
                             </Pressable>
                         ))}
-                        {/* Add Category Button */}
                         <Pressable
                             onPress={() => setIsAddingCat(!isAddingCat)}
                             className="px-3 py-1.5 rounded-full border border-slate-300 border-dashed"
@@ -192,11 +209,7 @@ export const AddLinkModal = ({ visible, onClose, editLink, sharedUrl, onClearSha
                 {isAddingCat && (
                     <View className="flex-row gap-2 items-end">
                         <View className="flex-1">
-                            <Input
-                                placeholder="New category name"
-                                value={newCat}
-                                onChangeText={setNewCat}
-                            />
+                            <Input placeholder="New category name" value={newCat} onChangeText={setNewCat} />
                         </View>
                         <Button
                             size="sm"
@@ -207,6 +220,7 @@ export const AddLinkModal = ({ visible, onClose, editLink, sharedUrl, onClearSha
                                     setCategory(newCat);
                                     setNewCat('');
                                     setIsAddingCat(false);
+                                    setHasChanges(true);
                                 }
                             }}
                         >
@@ -216,7 +230,7 @@ export const AddLinkModal = ({ visible, onClose, editLink, sharedUrl, onClearSha
                 )}
 
                 <Button onPress={handleSubmit} loading={loading} className="mt-4">
-                    {editLink ? "Save Changes" : "Add Link"}
+                    {editLink ? 'Save Changes' : 'Add Link'}
                 </Button>
             </View>
         </Modal>
