@@ -45,15 +45,15 @@ const LinkItemComponent = ({ link, onEdit }: { link: any, onEdit: (link: any) =>
 
 
     return (
-        <View className="items-center mb-6">
+        <View className="items-center mb-8 mx-2">
             <Pressable
                 onPress={() => openLink(link.url)}
                 onLongPress={() => setShowMenu(true)}
                 delayLongPress={500}
-                className="group items-center justify-center"
+                className="group relative"
             >
-                {/* iOS App Icon Shape */}
-                <View className="w-[60px] h-[60px] sm:w-[72px] sm:h-[72px] mb-2 bg-white dark:bg-slate-800 rounded-2xl sm:rounded-3xl items-center justify-center overflow-hidden shadow-sm hover:scale-105 active:scale-95 transition-transform duration-200 border border-slate-200/50 dark:border-slate-700/50">
+                {/* Million-Dollar Glassmorphic Icon Card */}
+                <View className="w-[72px] h-[72px] sm:w-[84px] sm:h-[84px] mb-3 bg-white/80 dark:bg-slate-800/80 rounded-[24px] sm:rounded-[28px] items-center justify-center overflow-hidden shadow-lg border border-white/40 dark:border-slate-700/40 backdrop-blur-xl transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-2 group-active:scale-95 group-hover:shadow-emerald-500/20">
                     {!imageError && link.icon ? (
                         <Image
                             source={{ uri: link.icon }}
@@ -62,33 +62,36 @@ const LinkItemComponent = ({ link, onEdit }: { link: any, onEdit: (link: any) =>
                             onError={() => setImageError(true)}
                         />
                     ) : (
-                        <View className="w-full h-full bg-slate-100 dark:bg-slate-700 items-center justify-center">
-                            <Text className="text-2xl sm:text-3xl font-bold text-slate-400">{initial}</Text>
+                        <View className="w-full h-full bg-gradient-to-br from-emerald-400 to-teal-500 items-center justify-center">
+                            <Text className="text-2xl sm:text-3xl font-extrabold text-white drop-shadow-sm">{initial}</Text>
                         </View>
                     )}
+                    
+                    {/* Hover Glow Effect */}
+                    <View className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </View>
 
-                {/* App Label */}
+                {/* Refined Label with Better Typography */}
                 <Text
-                    className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200 text-center w-full px-1"
+                    className="text-[11px] sm:text-[13px] font-bold text-slate-700 dark:text-slate-200 text-center w-full px-2 tracking-tight opacity-90 group-hover:opacity-100 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition-colors"
                     numberOfLines={1}
                 >
                     {link.title}
                 </Text>
-            </Pressable>
 
-            {/* Context Menu Trigger (optional / alternative to long press) */}
-            {Platform.OS === 'web' && (
-                <Pressable
-                    className="absolute -top-1 -right-1 p-1 rounded-full bg-slate-200 dark:bg-slate-700 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onPress={(e) => {
-                        e.stopPropagation();
-                        setShowMenu(true);
-                    }}
-                >
-                    <MoreHorizontal size={12} className="text-slate-500 dark:text-slate-400" />
-                </Pressable>
-            )}
+                {/* Context Menu Trigger - Premium Minimalist Button */}
+                {Platform.OS === 'web' && (
+                    <Pressable
+                        className="absolute -top-2 -right-2 w-7 h-7 items-center justify-center rounded-full bg-white dark:bg-slate-700 shadow-md opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-emerald-500 hover:scale-110 border border-slate-100 dark:border-slate-600"
+                        onPress={(e) => {
+                            e.stopPropagation();
+                            setShowMenu(true);
+                        }}
+                    >
+                        <MoreHorizontal size={14} color="#64748b" />
+                    </Pressable>
+                )}
+            </Pressable>
 
             <LinkOptionsSheet
                 visible={showMenu}

@@ -9,12 +9,14 @@ import { FloatingActionButton } from '../../src/components/ui/FloatingActionButt
 import { Logo } from '../../src/components/ui/Logo';
 import { TopLiquidSearchBar } from '../../src/components/ui/TopLiquidSearchBar';
 import { useAuth } from '../../src/context/AuthContext';
+import { useShare } from '../../src/context/ShareContext';
 import { useTheme } from '../../src/context/ThemeContext';
 
 export default function Dashboard() {
   const router = useRouter();
   const { session, loading } = useAuth();
   const { toggleTheme, isDark } = useTheme();
+  const { sharedUrl, clearSharedUrl } = useShare();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [showSearch, setShowSearch] = useState(false);
@@ -36,6 +38,12 @@ export default function Dashboard() {
       setDebouncedSearch(text);
     }, 300);
   }, []);
+
+  useEffect(() => {
+    if (sharedUrl) {
+      setShowAddModal(true);
+    }
+  }, [sharedUrl]);
 
   useEffect(() => {
     if (!loading && !session) {
@@ -130,8 +138,13 @@ export default function Dashboard() {
       {/* Add/Edit Modal */}
       <AddLinkModal
         visible={showAddModal}
-        onClose={() => setShowAddModal(false)}
+        onClose={() => {
+          setShowAddModal(false);
+          setEditingLink(null);
+          clearSharedUrl();
+        }}
         editLink={editingLink}
+        sharedUrl={sharedUrl}
       />
     </View>
   );

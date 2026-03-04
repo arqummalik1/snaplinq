@@ -12,9 +12,11 @@ interface AddLinkModalProps {
     visible: boolean;
     onClose: () => void;
     editLink?: any;
+    sharedUrl?: string | null;
+    onClearShare?: () => void;
 }
 
-export const AddLinkModal = ({ visible, onClose, editLink }: AddLinkModalProps) => {
+export const AddLinkModal = ({ visible, onClose, editLink, sharedUrl, onClearShare }: AddLinkModalProps) => {
     const { addLink, updateLink, categories, addCategory } = useLinkContext();
     const { success, error } = useToast();
     const [loading, setLoading] = useState(false);
@@ -33,10 +35,18 @@ export const AddLinkModal = ({ visible, onClose, editLink }: AddLinkModalProps) 
             setTitle(editLink.title);
             setCategory(editLink.category);
             setIcon(editLink.icon || '');
+        } else if (sharedUrl) {
+            setUrl(sharedUrl);
+            const autoTitle = generateTitle(sharedUrl);
+            const autoIcon = getFavicon(sharedUrl);
+            const autoCat = categorizeUrl(sharedUrl);
+            setTitle(autoTitle);
+            setIcon(autoIcon);
+            setCategory(autoCat);
         } else {
             resetForm();
         }
-    }, [editLink, visible]);
+    }, [editLink, sharedUrl, visible]);
 
     const resetForm = () => {
         setUrl('');
@@ -46,6 +56,9 @@ export const AddLinkModal = ({ visible, onClose, editLink }: AddLinkModalProps) 
         setNewCat('');
         setIsAddingCat(false);
         setHasChanges(false);
+        if (onClearShare) {
+            onClearShare();
+        }
     };
 
     // Track changes when user modifies any field

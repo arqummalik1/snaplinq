@@ -30,13 +30,32 @@ export const LinkGrid = ({ searchQuery, onEdit, contentContainerStyle, ListHeade
     const sections = useMemo(() => categories
         .map(category => ({
             title: category,
-            data: filteredLinks.filter(l => (l.category || 'Uncategorized') === category) // Note: This filter is O(N*M), could be optimized but fine for <1000 links
+            data: filteredLinks.filter(l => (l.category || 'Uncategorized') === category)
         })), [categories, filteredLinks]);
+
+    const EmptyState = () => (
+        <View className="flex-1 items-center justify-center pt-32 pb-20">
+            <View className="w-24 h-24 bg-emerald-500/10 rounded-full items-center justify-center mb-6">
+                <View className="w-16 h-16 bg-emerald-500/20 rounded-full items-center justify-center">
+                    <Text className="text-4xl">✨</Text>
+                </View>
+            </View>
+            <Text className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">
+                Your Vault is Empty
+            </Text>
+            <Text className="text-slate-500 dark:text-slate-400 text-center max-w-[280px] leading-relaxed">
+                Start building your collection by adding your favorite links and resources.
+            </Text>
+        </View>
+    );
 
     if (loading) {
         return (
             <View className="flex-1 items-center justify-center pt-20">
-                <Text className="text-slate-500">Loading your vault...</Text>
+                <View className="animate-pulse items-center">
+                    <View className="w-12 h-12 bg-emerald-500/20 rounded-full mb-4" />
+                    <Text className="text-slate-400 font-medium">Synchronizing your vault...</Text>
+                </View>
             </View>
         );
     }
@@ -44,20 +63,16 @@ export const LinkGrid = ({ searchQuery, onEdit, contentContainerStyle, ListHeade
     // Handle empty search results
     if (filteredLinks.length === 0 && searchQuery.trim() !== '') {
         return (
-            <View className="flex-1 items-center justify-center pt-20">
-                <Text className="text-slate-500 text-lg">No results found</Text>
-                <Text className="text-slate-400 text-sm mt-2">Try a different search term</Text>
+            <View className="flex-1 items-center justify-center pt-32">
+                <Text className="text-4xl mb-4">🔍</Text>
+                <Text className="text-xl font-bold text-slate-800 dark:text-slate-100">No results found</Text>
+                <Text className="text-slate-400 mt-2">Try searching for something else</Text>
             </View>
         );
     }
 
     if (filteredLinks.length === 0 && categories.length === 1 && categories[0] === 'Uncategorized') {
-        return (
-            <View className="flex-1 items-center justify-center pt-20">
-                <Text className="text-slate-500 text-lg">No links found</Text>
-                <Text className="text-slate-400 text-sm mt-2">Tap + to add your first link</Text>
-            </View>
-        );
+        return <EmptyState />;
     }
 
     return (
@@ -77,12 +92,17 @@ export const LinkGrid = ({ searchQuery, onEdit, contentContainerStyle, ListHeade
                     return (
                         <View className="mb-5">
                             {/* Category Header */}
-                            <View className="flex-row items-center justify-between mb-3 pl-2">
-                                <View className="flex-row items-center gap-2">
-                                    <View className="w-1 h-5 bg-emerald-500 rounded-full" />
-                                    <Text className="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">
-                                        {section.title}
-                                    </Text>
+                            <View className="flex-row items-center justify-between mb-4 pl-3 pr-2">
+                                <View className="flex-row items-center gap-3">
+                                    <View className="w-1.5 h-6 bg-gradient-to-b from-emerald-400 to-teal-500 rounded-full" />
+                                    <View>
+                                        <Text className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                                            {section.title}
+                                        </Text>
+                                        <Text className="text-[11px] text-slate-400 font-bold uppercase tracking-[1.5px] -mt-0.5">
+                                            {section.data.length} {section.data.length === 1 ? 'Link' : 'Links'}
+                                        </Text>
+                                    </View>
                                 </View>
 
                                 {section.title !== 'Uncategorized' && section.data.length === 0 && (

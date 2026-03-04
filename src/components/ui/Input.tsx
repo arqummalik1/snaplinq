@@ -1,23 +1,58 @@
-import { TextInput, View, Text, TextInputProps } from 'react-native';
+import React, { useState } from 'react';
+import { Text, TextInput, TextInputProps, View } from 'react-native';
+import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
 interface InputProps extends TextInputProps {
     label?: string;
+    error?: string;
     className?: string;
 }
 
-export const Input = ({ label, className, ...props }: InputProps) => {
+export const Input = ({ label, error, className, onFocus, onBlur, ...props }: InputProps) => {
+    const [isFocused, setIsFocused] = useState(false);
+
+    const handleFocus = (e: any) => {
+        setIsFocused(true);
+        onFocus?.(e);
+    };
+
+    const handleBlur = (e: any) => {
+        setIsFocused(false);
+        onBlur?.(e);
+    };
+
+    const borderStyle = useAnimatedStyle(() => ({
+        borderColor: withTiming(
+            error ? '#ef4444' : (isFocused ? '#10b981' : 'transparent'),
+            { duration: 200 }
+        ),
+        borderWidth: 1.5,
+    }));
+
     return (
-        <View className="w-full space-y-2">
+        <View className="w-full mb-4">
             {label && (
-                <Text className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">
+                <Text className="text-[13px] font-bold text-slate-500 dark:text-slate-400 ml-1 mb-1.5 uppercase tracking-wider">
                     {label}
                 </Text>
             )}
-            <TextInput
-                placeholderTextColor="#94a3b8"
-                className={`w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-emerald-500 ${className}`}
-                {...props}
-            />
+            <Animated.View 
+                style={[borderStyle]}
+                className="rounded-2xl bg-slate-100/80 dark:bg-slate-800/80 overflow-hidden"
+            >
+                <TextInput
+                    placeholderTextColor="#94a3b8"
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                    className={`w-full px-5 py-4 text-[16px] text-slate-900 dark:text-white ${className}`}
+                    {...props}
+                />
+            </Animated.View>
+            {error && (
+                <Text className="text-red-500 text-xs mt-1.5 ml-1 font-medium">
+                    {error}
+                </Text>
+            )}
         </View>
     );
 };

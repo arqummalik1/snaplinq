@@ -2,12 +2,58 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Prevent horizontal overflow & unwanted zoom on mobile web */
+/* Premium Million-Dollar Web Experience Styles */
+:root {
+  --primary: #10b981;
+  --secondary: #6366f1;
+  --bg-light: #f8fafc;
+  --bg-dark: #0f172a;
+}
+
 html, body {
   max-width: 100vw;
   overflow-x: hidden;
   -webkit-text-size-adjust: 100%;
   touch-action: manipulation;
+  background-color: var(--bg-light);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+@media (prefers-color-scheme: dark) {
+  html, body {
+    background-color: var(--bg-dark);
+  }
+}
+
+/* Custom Scrollbar for Premium Look */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 20px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.4);
+}
+
+/* Smooth Focus Rings */
+*:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Glassmorphism Utility */
+.glass-effect {
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
 }
 
 /* Prevent input zoom on iOS */
@@ -19,4 +65,15 @@ input, select, textarea {
 #root {
   max-width: 100vw;
   overflow-x: hidden;
+}
+
+/* Premium Animations */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
 }

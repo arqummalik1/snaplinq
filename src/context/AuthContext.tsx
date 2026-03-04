@@ -22,7 +22,7 @@ if (Platform.OS === 'web') {
     // Basic Google Config (User needs to replace webClientId with their own from Google Cloud)
     // This is a placeholder config.
     GoogleSignin.configure({
-        webClientId: 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com',
+        webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
         offlineAccess: true,
     });
 }
