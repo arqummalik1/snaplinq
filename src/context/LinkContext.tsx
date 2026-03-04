@@ -1,37 +1,17 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
-import { supabase } from '../lib/supabase';
+import { DAILY_RECS_COUNT, DEFAULT_CATEGORIES, RECENT_LINKS_COUNT } from '../constants';
+import { LinkRepository } from '../repositories/LinkRepository';
+import { CategoryService } from '../services/CategoryService';
+import { Link, LinkContextType, LinkPatch, NewLink } from '../types';
 import { useAuth } from './AuthContext';
 
-interface Link {
-    id: string;
-    url: string;
-    title: string;
-    icon?: string;
-    category: string;
-    created_at?: string;
-    user_id?: string;
-    visited?: boolean;
-    last_visited_at?: string;
+// Extending LinkContextType to include importLinks
+interface ExtendedLinkContextType extends LinkContextType {
+    importLinks: (links: NewLink[]) => Promise<void>;
 }
 
-interface LinkContextType {
-    links: Link[];
-    recentLinks: Link[];
-    dailyRecommendations: Link[];
-    categories: string[];
-    loading: boolean;
-    refresh: () => Promise<void>;
-    addLink: (link: Partial<Link>) => Promise<void>;
-    updateLink: (id: string, updates: Partial<Link>) => Promise<void>;
-    markVisited: (id: string) => Promise<void>;
-    deleteLink: (id: string) => Promise<void>;
-    addCategory: (name: string) => void;
-    deleteCategory: (name: string) => Promise<void>;
-    renameCategory: (oldName: string, newName: string) => Promise<void>;
-}
-
-const LinkContext = createContext<LinkContextType | undefined>(undefined);
+const LinkContext = createContext<ExtendedLinkContextType | undefined>(undefined);
 
 export const LinkProvider = ({ children }: { children: React.ReactNode }) => {
     const { session } = useAuth();
@@ -39,28 +19,34 @@ export const LinkProvider = ({ children }: { children: React.ReactNode }) => {
     const [recentLinks, setRecentLinks] = useState<Link[]>([]);
     const [dailyRecommendations, setDailyRecommendations] = useState<Link[]>([]);
     const [loading, setLoading] = useState(true);
-    const [categories, setCategories] = useState<string[]>([
-        'Uncategorized', 'Coding', 'Design', 'Reading', 'Music', 'Social', 'AI Tools', 'News', 'Travel'
-    ]);
+    const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
 
     const generateDailyRecommendations = (allLinks: Link[]) => {
         if (allLinks.length === 0) return [];
 
-        // Use the current date as a seed for consistent daily recommendations
         const today = new Date().toDateString();
         let seed = 0;
         for (let i = 0; i < today.length; i++) {
             seed += today.charCodeAt(i);
         }
 
-        // Shuffle based on seed
-        const shuffled = [...allLinks].sort((a, b) => {
-            const valA = (parseInt(a.id.slice(0, 8), 16) || 0) + seed;
-            const valB = (parseInt(b.id.slice(0, 8), 16) || 0) + seed;
-            return (valA % 100) - (valB % 100);
-        });
+        const shuffled = [...allLinks];
+        let m = shuffled.length, t, i;
+        let currentSeed = seed;
 
-        return shuffled.slice(0, 3);
+        const seededRandom = (s: number) => {
+            const x = Math.sin(s) * 10000;
+            return x - Math.floor(x);
+        };
+
+        while (m) {
+            i = Math.floor(seededRandom(currentSeed++) * m--);
+            t = shuffled[m];
+            shuffled[m] = shuffled[i];
+            shuffled[i] = t;
+        }
+
+        return shuffled.slice(0, DAILY_RECS_COUNT);
     };
 
     const refresh = useCallback(async () => {
@@ -70,32 +56,17 @@ export const LinkProvider = ({ children }: { children: React.ReactNode }) => {
             setDailyRecommendations([]);
             return;
         }
+
         setLoading(true);
         try {
-            const { data, error } = await supabase
-                .from('links')
-                .select('*')
-                .eq('user_id', session.user.id)
-                .order('created_at', { ascending: false });
-
-            if (error) {
-                console.error("Fetch Error:", error);
-            } else {
-                const fetchedLinks = data || [];
-                setLinks(fetchedLinks);
-
-                // Recents: Last 10 added links
-                setRecentLinks(fetchedLinks.slice(0, 10));
-
-                // Daily Recommendations: 3 random tools (seeded by date)
-                setDailyRecommendations(generateDailyRecommendations(fetchedLinks));
-
-                // Extract unique categories
-                const usedCategories = new Set(fetchedLinks.map(l => l.category));
-                setCategories(prev => Array.from(new Set([...prev, ...usedCategories])));
-            }
+            const fetchedLinks = await LinkRepository.getAll(session.user.id);
+            setLinks(fetchedLinks);
+            setRecentLinks(fetchedLinks.slice(0, RECENT_LINKS_COUNT));
+            setDailyRecommendations(generateDailyRecommendations(fetchedLinks));
+            const usedCategories = new Set(fetchedLinks.map((l) => l.category));
+            setCategories((prev) => Array.from(new Set([...prev, ...usedCategories])));
         } catch (e) {
-            console.error("Refresh Error:", e);
+            console.error('Refresh Error:', e);
         } finally {
             setLoading(false);
         }
@@ -105,68 +76,46 @@ export const LinkProvider = ({ children }: { children: React.ReactNode }) => {
         if (session) refresh();
     }, [session, refresh]);
 
-    const addLink = async (link: Partial<Link>) => {
+    const addLink = async (link: NewLink) => {
         if (!session?.user) return;
+        await LinkRepository.add(link, session.user.id);
+        await refresh();
+    };
 
-        const { error } = await supabase.from('links').insert({
-            ...link,
-            user_id: session.user.id,
-            created_at: new Date().toISOString(),
-            visited: false,
-        });
-
-        if (error) throw error;
+    const importLinks = async (newLinks: NewLink[]) => {
+        if (!session?.user) return;
+        await LinkRepository.addBulk(newLinks, session.user.id);
         await refresh();
     };
 
     const markVisited = async (id: string) => {
         const timestamp = new Date().toISOString();
-        const { error } = await supabase
-            .from('links')
-            .update({
-                visited: true,
-                last_visited_at: timestamp
-            })
-            .eq('id', id);
-
-        if (error) {
-            console.error("Mark Visited Error:", error);
-            throw error;
+        try {
+            await LinkRepository.visit(id);
+            setLinks((prev) =>
+                prev.map((l) => (l.id === id ? { ...l, visited: true, last_visited_at: timestamp } : l))
+            );
+        } catch (e) {
+            console.error('Mark Visited Error:', e);
+            throw e;
         }
-
-        // Optimistic update
-        setLinks(prev => prev.map(l => l.id === id ? { ...l, visited: true, last_visited_at: timestamp } : l));
     };
 
-    const updateLink = async (id: string, updates: Partial<Link>) => {
-        const { error } = await supabase
-            .from('links')
-            .update(updates)
-            .eq('id', id);
-
-        if (error) throw error;
+    const updateLink = async (id: string, updates: LinkPatch) => {
+        await LinkRepository.update(id, updates);
         await refresh();
     };
 
     const deleteLink = async (id: string) => {
         try {
-            const { error } = await supabase.from('links').delete().eq('id', id);
-            if (error) throw error;
-
-            // Optimistic update: remove from local state immediately
-            setLinks(prev => prev.filter(l => l.id !== id));
-
-            // Also update categories if needed (if it was the last link in a category?)
-            // Actually, we keep categories even if empty usually, or refresh handles it.
-            // But refreshing strictly for categories might be overkill if we just deleted one link.
-            // We can skip refresh() to make it instant.
+            await LinkRepository.remove(id);
+            setLinks((prev) => prev.filter((l) => l.id !== id));
         } catch (e) {
-            console.error("Delete Error:", e);
+            console.error('Delete Error:', e);
             throw e;
         }
     };
 
-    // Local category mgmt (simple version, just updates state until link added)
     const addCategory = (name: string) => {
         if (!categories.includes(name)) setCategories([...categories, name]);
     };
@@ -176,20 +125,11 @@ export const LinkProvider = ({ children }: { children: React.ReactNode }) => {
             Alert.alert('Cannot delete default category');
             return;
         }
-
+        if (!session?.user) return;
         try {
-            // 1. Move all links in this category to 'Uncategorized'
-            const { error: updateError } = await supabase
-                .from('links')
-                .update({ category: 'Uncategorized' })
-                .eq('category', name)
-                .eq('user_id', session?.user?.id);
-
-            if (updateError) throw updateError;
-
-            // 2. Remove from local state
-            setCategories(categories.filter(c => c !== name));
-            await refresh(); // Refresh to get updated links
+            await CategoryService.moveLinksToCategoryDefault(name, session.user.id);
+            setCategories(categories.filter((c) => c !== name));
+            await refresh();
         } catch (error) {
             console.error('Error deleting category:', error);
             Alert.alert('Error', 'Failed to delete category');
@@ -206,19 +146,10 @@ export const LinkProvider = ({ children }: { children: React.ReactNode }) => {
             Alert.alert('Category name already exists');
             return;
         }
-
+        if (!session?.user) return;
         try {
-            // 1. Update all links with this category
-            const { error } = await supabase
-                .from('links')
-                .update({ category: newName })
-                .eq('category', oldName)
-                .eq('user_id', session?.user?.id);
-
-            if (error) throw error;
-
-            // 2. Update local state
-            setCategories(categories.map(c => c === oldName ? newName : c));
+            await CategoryService.renameLinksCategory(oldName, newName, session.user.id);
+            setCategories(categories.map((c) => (c === oldName ? newName : c)));
             await refresh();
         } catch (error) {
             console.error('Error renaming category:', error);
@@ -228,21 +159,24 @@ export const LinkProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     return (
-        <LinkContext.Provider value={{
-            links,
-            recentLinks,
-            dailyRecommendations,
-            categories,
-            loading,
-            refresh,
-            addLink,
-            updateLink,
-            markVisited,
-            deleteLink,
-            addCategory,
-            deleteCategory,
-            renameCategory
-        }}>
+        <LinkContext.Provider
+            value={{
+                links,
+                recentLinks,
+                dailyRecommendations,
+                categories,
+                loading,
+                refresh,
+                addLink,
+                importLinks,
+                updateLink,
+                markVisited,
+                deleteLink,
+                addCategory,
+                deleteCategory,
+                renameCategory,
+            }}
+        >
             {children}
         </LinkContext.Provider>
     );
