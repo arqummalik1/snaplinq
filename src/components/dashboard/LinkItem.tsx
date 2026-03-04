@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as WebBrowser from 'expo-web-browser';
 import { MoreHorizontal } from 'lucide-react-native';
 import { memo, useState } from 'react';
@@ -7,7 +8,7 @@ import { LiquidAlert } from '../../components/ui/LiquidAlert';
 import { useLinkContext } from '../../context/LinkContext';
 import { LinkOptionsSheet } from './LinkOptionsSheet';
 
-// Utility to start web browser
+// Utility to open link in browser
 const openLink = async (url: string) => {
     try {
         await WebBrowser.openBrowserAsync(url);
@@ -16,14 +17,30 @@ const openLink = async (url: string) => {
     }
 };
 
+// Google-style colorful gradients for fallback icons
+const FALLBACK_COLORS = [
+    ['#4285F4', '#34A853'], // Google Blue/Green
+    ['#EA4335', '#FBBC05'], // Google Red/Yellow
+    ['#10b981', '#3b82f6'], // Emerald/Blue
+    ['#8b5cf6', '#ec4899'], // Violet/Pink
+    ['#f97316', '#ef4444'], // Orange/Red
+    ['#06b6d4', '#8b5cf6'], // Cyan/Violet
+];
+
+const getFallbackColors = (title: string) => {
+    const charCode = title.charCodeAt(0) || 0;
+    return FALLBACK_COLORS[charCode % FALLBACK_COLORS.length];
+};
 
 const LinkItemComponent = ({ link, onEdit }: { link: any, onEdit: (link: any) => void }) => {
     const { deleteLink, markVisited } = useLinkContext();
     const [showMenu, setShowMenu] = useState(false);
     const [imageError, setImageError] = useState(false);
 
-    // Initial for fallback - handle null/undefined title safely
-    const initial = link.title?.charAt(0)?.toUpperCase() || '#';
+    // Initial for fallback
+    const title = link.title || 'App';
+    const initial = title.charAt(0).toUpperCase();
+    const colors = getFallbackColors(title) as [string, string];
 
     const [showDeleteAlert, setShowDeleteAlert] = useState(false);
 
@@ -71,9 +88,14 @@ const LinkItemComponent = ({ link, onEdit }: { link: any, onEdit: (link: any) =>
                             onError={() => setImageError(true)}
                         />
                     ) : (
-                        <View className="w-full h-full bg-gradient-to-br from-emerald-400 to-teal-500 items-center justify-center">
+                        <LinearGradient
+                            colors={colors}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            className="w-full h-full items-center justify-center"
+                        >
                             <Text className="text-2xl sm:text-3xl font-black text-white drop-shadow-lg">{initial}</Text>
-                        </View>
+                        </LinearGradient>
                     )}
                     
                     {/* Visited Status Indicator (Liquid Glass Dot) */}
