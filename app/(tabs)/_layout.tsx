@@ -4,10 +4,9 @@ import { LiquidTabBar } from '../../src/components/ui/LiquidTabBar';
 export default function TabLayout() {
   return (
     <Tabs
-      tabBar={props => <LiquidTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-
+        tabBarStyle: { display: 'none' }, // Completely hide the tab bar
       }}
     >
       <Tabs.Screen

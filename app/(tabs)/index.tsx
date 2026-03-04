@@ -154,7 +154,11 @@ export default function Dashboard() {
                 className="absolute right-0 top-14 w-52 bg-white/90 dark:bg-slate-800/90 rounded-[24px] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden z-50 backdrop-blur-xl"
               >
                 <Pressable 
-                  onPress={() => { setShowMenu(false); router.push('/settings'); }}
+                  onPress={() => { 
+                    setShowMenu(false); 
+                    // Use setTimeout to allow the menu to close before navigating
+                    setTimeout(() => router.push('/settings'), 100);
+                  }}
                   className="px-6 py-4 active:bg-slate-100 dark:active:bg-slate-700 border-b border-slate-50 dark:border-slate-700 flex-row items-center justify-between"
                 >
                   <Text className="font-bold text-slate-800 dark:text-white">Settings</Text>
