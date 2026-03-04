@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
@@ -45,7 +45,7 @@ export const LinkProvider = ({ children }: { children: React.ReactNode }) => {
 
     const generateDailyRecommendations = (allLinks: Link[]) => {
         if (allLinks.length === 0) return [];
-        
+
         // Use the current date as a seed for consistent daily recommendations
         const today = new Date().toDateString();
         let seed = 0;
@@ -75,6 +75,7 @@ export const LinkProvider = ({ children }: { children: React.ReactNode }) => {
             const { data, error } = await supabase
                 .from('links')
                 .select('*')
+                .eq('user_id', session.user.id)
                 .order('created_at', { ascending: false });
 
             if (error) {
@@ -82,10 +83,10 @@ export const LinkProvider = ({ children }: { children: React.ReactNode }) => {
             } else {
                 const fetchedLinks = data || [];
                 setLinks(fetchedLinks);
-                
+
                 // Recents: Last 10 added links
                 setRecentLinks(fetchedLinks.slice(0, 10));
-                
+
                 // Daily Recommendations: 3 random tools (seeded by date)
                 setDailyRecommendations(generateDailyRecommendations(fetchedLinks));
 
@@ -115,16 +116,16 @@ export const LinkProvider = ({ children }: { children: React.ReactNode }) => {
         });
 
         if (error) throw error;
-        refresh();
+        await refresh();
     };
 
     const markVisited = async (id: string) => {
         const timestamp = new Date().toISOString();
         const { error } = await supabase
             .from('links')
-            .update({ 
-                visited: true, 
-                last_visited_at: timestamp 
+            .update({
+                visited: true,
+                last_visited_at: timestamp
             })
             .eq('id', id);
 
@@ -132,7 +133,7 @@ export const LinkProvider = ({ children }: { children: React.ReactNode }) => {
             console.error("Mark Visited Error:", error);
             throw error;
         }
-        
+
         // Optimistic update
         setLinks(prev => prev.map(l => l.id === id ? { ...l, visited: true, last_visited_at: timestamp } : l));
     };
@@ -144,7 +145,7 @@ export const LinkProvider = ({ children }: { children: React.ReactNode }) => {
             .eq('id', id);
 
         if (error) throw error;
-        refresh();
+        await refresh();
     };
 
     const deleteLink = async (id: string) => {

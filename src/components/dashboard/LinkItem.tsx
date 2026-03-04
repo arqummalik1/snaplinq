@@ -3,7 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as WebBrowser from 'expo-web-browser';
 import { MoreHorizontal } from 'lucide-react-native';
 import { memo, useState } from 'react';
-import { Platform, Pressable, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, Text, View } from 'react-native';
 import { LiquidAlert } from '../../components/ui/LiquidAlert';
 import { useLinkContext } from '../../context/LinkContext';
 import { LinkOptionsSheet } from './LinkOptionsSheet';
@@ -63,7 +63,7 @@ const LinkItemComponent = ({ link, onEdit }: { link: any, onEdit: (link: any) =>
             await deleteLink(link.id);
         } catch (e) {
             console.error(e);
-            alert("Failed to delete"); // Fallback for error
+            Alert.alert('Error', 'Failed to delete link. Please try again.');
         } finally {
             setShowDeleteAlert(false);
         }
@@ -97,7 +97,7 @@ const LinkItemComponent = ({ link, onEdit }: { link: any, onEdit: (link: any) =>
                             <Text className="text-2xl sm:text-3xl font-black text-white drop-shadow-lg">{initial}</Text>
                         </LinearGradient>
                     )}
-                    
+
                     {/* Visited Status Indicator (Liquid Glass Dot) */}
                     {!link.visited && (
                         <View className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-800 shadow-sm z-10" />
@@ -110,11 +110,10 @@ const LinkItemComponent = ({ link, onEdit }: { link: any, onEdit: (link: any) =>
                 {/* Highly Readable Elite Typography */}
                 <View className="h-[32px] justify-start items-center px-1">
                     <Text
-                        className={`text-[11px] sm:text-[12px] font-bold text-center leading-tight tracking-tight transition-colors ${
-                            link.visited 
-                                ? 'text-slate-400 dark:text-slate-500' 
+                        className={`text-[11px] sm:text-[12px] font-bold text-center leading-tight tracking-tight transition-colors ${link.visited
+                                ? 'text-slate-400 dark:text-slate-500'
                                 : 'text-slate-800 dark:text-slate-100'
-                        } group-hover:text-emerald-500 dark:group-hover:text-emerald-400`}
+                            } group-hover:text-emerald-500 dark:group-hover:text-emerald-400`}
                         numberOfLines={2}
                         ellipsizeMode="tail"
                     >

@@ -1,11 +1,8 @@
 import {
     AppWindow,
     ChevronDown,
-    ChevronRight,
     FolderOpen,
-    FolderPlus,
     Grid,
-    Info,
     Layout as LayoutIcon,
     List,
     LogOut,
@@ -16,7 +13,7 @@ import {
     User
 } from 'lucide-react-native';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View, StyleSheet } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { Button } from '../../src/components/ui/Button';
 import { Input } from '../../src/components/ui/Input';
 import { Modal } from '../../src/components/ui/Modal';
@@ -64,24 +61,23 @@ export default function SettingsScreen() {
         );
     };
 
-    const ThemeCard = ({ option, label, icon: Icon, selected }: { 
-        option: ThemeOption; 
-        label: string; 
+    const ThemeCard = ({ option, label, icon: Icon, selected }: {
+        option: ThemeOption;
+        label: string;
         icon: any;
         selected: boolean;
     }) => (
         <Pressable
             onPress={() => setTheme(option)}
-            className={`flex-1 p-4 rounded-2xl items-center justify-center transition-all ${
-                selected 
-                    ? 'bg-emerald-500 shadow-lg shadow-emerald-500/30' 
+            className={`flex-1 p-4 rounded-2xl items-center justify-center transition-all ${selected
+                    ? 'bg-emerald-500 shadow-lg shadow-emerald-500/30'
                     : 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700'
-            }`}
+                }`}
         >
             <View className={`p-3 rounded-full mb-2 ${selected ? 'bg-white/20' : 'bg-slate-100 dark:bg-slate-700'}`}>
-                <Icon 
-                    size={22} 
-                    color={selected ? 'white' : isDark ? '#94a3b8' : '#64748b'} 
+                <Icon
+                    size={22}
+                    color={selected ? 'white' : isDark ? '#94a3b8' : '#64748b'}
                 />
             </View>
             <Text className={`text-[12px] font-bold uppercase tracking-wider ${selected ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}>
@@ -90,24 +86,23 @@ export default function SettingsScreen() {
         </Pressable>
     );
 
-    const LayoutCard = ({ option, label, icon: Icon, selected }: { 
-        option: LayoutOption; 
-        label: string; 
+    const LayoutCard = ({ option, label, icon: Icon, selected }: {
+        option: LayoutOption;
+        label: string;
         icon: any;
         selected: boolean;
     }) => (
         <Pressable
             onPress={() => setLayout(option)}
-            className={`flex-1 p-4 rounded-2xl items-center justify-center transition-all ${
-                selected 
-                    ? 'bg-emerald-500 shadow-lg shadow-emerald-500/30' 
+            className={`flex-1 p-4 rounded-2xl items-center justify-center transition-all ${selected
+                    ? 'bg-emerald-500 shadow-lg shadow-emerald-500/30'
                     : 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700'
-            }`}
+                }`}
         >
             <View className={`p-3 rounded-full mb-2 ${selected ? 'bg-white/20' : 'bg-slate-100 dark:bg-slate-700'}`}>
-                <Icon 
-                    size={22} 
-                    color={selected ? 'white' : isDark ? '#94a3b8' : '#64748b'} 
+                <Icon
+                    size={22}
+                    color={selected ? 'white' : isDark ? '#94a3b8' : '#64748b'}
                 />
             </View>
             <Text className={`text-[12px] font-bold uppercase tracking-wider ${selected ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}>
@@ -116,8 +111,8 @@ export default function SettingsScreen() {
         </Pressable>
     );
 
-    const SettingSection = ({ title, icon: Icon, children }: { 
-        title: string; 
+    const SettingSection = ({ title, icon: Icon, children }: {
+        title: string;
         icon: any;
         children: React.ReactNode;
     }) => (
@@ -186,7 +181,7 @@ export default function SettingsScreen() {
                 {/* Categories Section */}
                 <View className="px-8">
                     <SettingSection title="Organization" icon={FolderOpen}>
-                        <Pressable 
+                        <Pressable
                             onPress={() => setCategoriesExpanded(!categoriesExpanded)}
                             className="flex-row items-center justify-between p-6"
                         >
@@ -198,22 +193,26 @@ export default function SettingsScreen() {
                                     <Text className="text-[10px] font-black text-emerald-500">{categories.length}</Text>
                                 </View>
                             </View>
-                            <ChevronDown size={20} className={`text-slate-400 transition-transform ${categoriesExpanded ? '' : '-rotate-90'}`} />
+                            <ChevronDown
+                                size={20}
+                                color={isDark ? '#94a3b8' : '#64748b'}
+                                style={{ transform: [{ rotate: categoriesExpanded ? '0deg' : '-90deg' }] }}
+                            />
                         </Pressable>
 
                         {categoriesExpanded && (
                             <View className="px-6 pb-6">
-                                {categories.map((category, index) => (
+                                {categories.map((category) => (
                                     <View key={category} className="flex-row items-center justify-between py-3">
                                         <Text className="text-slate-700 dark:text-slate-200 font-bold">{category}</Text>
                                         <View className="flex-row gap-2">
-                                            <Pressable 
+                                            <Pressable
                                                 onPress={() => { setEditingCategory(category); setNewCategoryName(category); setShowModal(true); }}
                                                 className="w-8 h-8 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800"
                                             >
                                                 <Palette size={14} color={isDark ? '#94a3b8' : '#64748b'} />
                                             </Pressable>
-                                            <Pressable 
+                                            <Pressable
                                                 onPress={() => handleDelete(category)}
                                                 className="w-8 h-8 items-center justify-center rounded-lg bg-red-500/10"
                                             >
@@ -222,7 +221,7 @@ export default function SettingsScreen() {
                                         </View>
                                     </View>
                                 ))}
-                                <Button 
+                                <Button
                                     onPress={() => { setEditingCategory(null); setNewCategoryName(''); setShowModal(true); }}
                                     variant="secondary"
                                     className="mt-4 border-dashed border-2 border-emerald-500/30 bg-transparent"

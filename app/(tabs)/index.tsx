@@ -3,13 +3,13 @@ import { MoreVertical, Search } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Animated, {
-    Extrapolate,
-    FadeOut,
-    ZoomIn,
-    interpolate,
-    useAnimatedScrollHandler,
-    useAnimatedStyle,
-    useSharedValue
+  Extrapolate,
+  FadeOut,
+  ZoomIn,
+  interpolate,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue
 } from 'react-native-reanimated';
 import { Fonts } from '../../constants/theme';
 import { AddLinkModal } from '../../src/components/dashboard/AddLinkModal';
@@ -28,7 +28,7 @@ export default function Dashboard() {
   const { session, loading, signOut } = useAuth();
   const { toggleTheme, isDark } = useTheme();
   const { sharedUrl, clearSharedUrl } = useShare();
-  
+
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [showSearch, setShowSearch] = useState(false);
@@ -105,9 +105,9 @@ export default function Dashboard() {
   return (
     <View className="flex-1 bg-slate-50 dark:bg-[#0f172a] relative">
       {/* Premium Collapsible Header */}
-      <Animated.View 
+      <Animated.View
         style={[headerStyle, styles.headerContainer]}
-        className="absolute top-0 left-0 right-0 z-40 bg-white/70 dark:bg-slate-900/70 border-b border-slate-200/30 dark:border-slate-800/30 backdrop-blur-3xl px-8 flex-row items-center justify-between"
+        className="absolute top-0 left-0 right-0 z-40 bg-white/70 dark:bg-slate-900/70 border-b border-slate-200/30 dark:border-slate-800/30 backdrop-blur-3xl px-5 flex-row items-center justify-between"
       >
         <View className="flex-row items-center gap-3">
           <Animated.View style={[logoStyle, styles.logoShadow]}>
@@ -147,15 +147,15 @@ export default function Dashboard() {
             </Pressable>
 
             {showMenu && (
-              <Animated.View 
-                entering={ZoomIn.duration(200)} 
+              <Animated.View
+                entering={ZoomIn.duration(200)}
                 exiting={FadeOut.duration(150)}
                 style={styles.menu}
                 className="absolute right-0 top-14 w-52 bg-white/90 dark:bg-slate-800/90 rounded-[24px] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden z-50 backdrop-blur-xl"
               >
-                <Pressable 
-                  onPress={() => { 
-                    setShowMenu(false); 
+                <Pressable
+                  onPress={() => {
+                    setShowMenu(false);
                     // Use setTimeout to allow the menu to close before navigating
                     setTimeout(() => router.push('/settings'), 100);
                   }}
@@ -164,14 +164,14 @@ export default function Dashboard() {
                   <Text className="font-bold text-slate-800 dark:text-white">Settings</Text>
                   <View className="w-1.5 h-1.5 rounded-full bg-slate-200" />
                 </Pressable>
-                <Pressable 
+                <Pressable
                   onPress={() => { setShowMenu(false); toggleTheme(); }}
                   className="px-6 py-4 active:bg-slate-100 dark:active:bg-slate-700 border-b border-slate-50 dark:border-slate-700 flex-row items-center justify-between"
                 >
                   <Text className="font-bold text-slate-800 dark:text-white">Theme</Text>
                   <View className={`w-3 h-3 rounded-full ${isDark ? 'bg-amber-400' : 'bg-slate-800'}`} />
                 </Pressable>
-                <Pressable 
+                <Pressable
                   onPress={() => { setShowMenu(false); signOut(); }}
                   className="px-6 py-5 active:bg-red-50 dark:active:bg-red-900/10"
                 >
@@ -222,7 +222,9 @@ export default function Dashboard() {
 
 const styles = StyleSheet.create({
   headerContainer: {
-    justifyContent: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   logoShadow: {
     shadowColor: "#10b981",

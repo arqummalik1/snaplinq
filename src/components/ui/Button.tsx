@@ -1,7 +1,6 @@
 import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 interface ButtonProps {
@@ -40,14 +39,12 @@ export const Button = ({
         transform: [{ scale: scale.value }],
     }));
 
-    const handlePress = async () => {
+    const handlePress = () => {
         if (disabled || loading) return;
         try {
-            await onPress();
+            onPress();
         } catch (e: any) {
             console.error("Button Press Error:", e);
-            // Error handling is already managed by ToastContext in most flows, 
-            // but this ensures the button doesn't hang.
         }
     };
 
@@ -56,6 +53,12 @@ export const Button = ({
         secondary: "bg-white/80 dark:bg-slate-800/80 border border-white/40 dark:border-slate-700/40 backdrop-blur-xl shadow-sm",
         ghost: "bg-transparent",
         danger: "bg-red-500/10 border border-red-500/20"
+    };
+
+    const sizes = {
+        sm: "px-4 py-2",
+        md: "px-6 py-4",
+        lg: "px-8 py-5",
     };
 
     const textStyles = {
@@ -95,10 +98,4 @@ export const Button = ({
     );
 };
 
-const styles = StyleSheet.create({
-    contentContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-    }
-});
+
