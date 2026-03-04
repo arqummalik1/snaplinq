@@ -25,7 +25,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
         const loadSettings = async () => {
             const savedTheme = await AsyncStorage.getItem('snaplinq_theme');
             const savedLayout = await AsyncStorage.getItem('snaplinq_layout');
-            
+
             if (savedTheme) {
                 setThemeState(savedTheme as Theme);
                 setColorScheme(savedTheme as Theme as any);
@@ -35,7 +35,8 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
             }
         };
         loadSettings();
-    }, [setColorScheme]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const setTheme = async (newTheme: Theme) => {
         setThemeState(newTheme);

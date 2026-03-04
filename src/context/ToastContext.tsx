@@ -1,4 +1,4 @@
-import React, { createContext, ReactNode, useCallback, useContext, useState } from 'react';
+import React, { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { Toast, ToastType } from '../components/ui/Toast';
 
@@ -20,21 +20,27 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 export const ToastProvider = ({ children }: { children: ReactNode }) => {
     const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
+    const timerRefs = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+    // Clear all pending timers on unmount
+    useEffect(() => {
+        return () => {
+            Object.values(timerRefs.current).forEach(clearTimeout);
+        };
+    }, []);
+
     const removeToast = useCallback((id: string) => {
+        clearTimeout(timerRefs.current[id]);
+        delete timerRefs.current[id];
         setToasts((prev) => prev.filter((toast) => toast.id !== id));
     }, []);
 
     const showToast = useCallback((message: string, type: ToastType = 'info') => {
         const id = Math.random().toString(36).substring(2, 9);
         setToasts((prev) => [...prev, { id, message, type }]);
-
-        // Auto remove after 3 seconds with cleanup
-        const timeoutId = setTimeout(() => {
+        timerRefs.current[id] = setTimeout(() => {
             removeToast(id);
         }, 3000);
-        
-        // Store timeout ID for cleanup (optional enhancement)
-        return timeoutId;
     }, [removeToast]);
 
     const success = useCallback((message: string) => showToast(message, 'success'), [showToast]);

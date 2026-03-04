@@ -123,15 +123,16 @@ export const AddLinkModal = ({ visible, onClose, editLink, sharedUrl, onClearSha
             resetForm();
         } catch (e) {
             console.error(e);
+            error(editLink ? "Failed to update link" : "Failed to add link");
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <Modal 
-            visible={visible} 
-            onClose={handleClose} 
+        <Modal
+            visible={visible}
+            onClose={handleClose}
             title={editLink ? "Edit Link" : "Add Link"}
             hasUnsavedChanges={hasChanges}
         >
@@ -141,7 +142,7 @@ export const AddLinkModal = ({ visible, onClose, editLink, sharedUrl, onClearSha
                     label="URL"
                     placeholder="https://example.com"
                     value={url}
-                    onChangeText={setUrl}
+                    onChangeText={handleUrlChange}
                     onBlur={handleUrlBlur}
                     autoCapitalize="none"
                 />
