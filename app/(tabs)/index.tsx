@@ -1,7 +1,8 @@
 import { useRouter } from 'expo-router';
-import { Moon, Search, Sun } from 'lucide-react-native';
+import { MoreVertical, Search } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { Fonts } from '../../constants/theme';
 import { AddLinkModal } from '../../src/components/dashboard/AddLinkModal';
 import { LinkGrid } from '../../src/components/dashboard/LinkGrid';
@@ -14,7 +15,7 @@ import { useTheme } from '../../src/context/ThemeContext';
 
 export default function Dashboard() {
   const router = useRouter();
-  const { session, loading } = useAuth();
+  const { session, loading, signOut } = useAuth();
   const { toggleTheme, isDark } = useTheme();
   const { sharedUrl, clearSharedUrl } = useShare();
   const [searchQuery, setSearchQuery] = useState('');
@@ -22,33 +23,24 @@ export default function Dashboard() {
   const [showSearch, setShowSearch] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingLink, setEditingLink] = useState<any>(null);
+  const [showMenu, setShowMenu] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Debounce search input
   const handleSearchChange = useCallback((text: string) => {
     setSearchQuery(text);
-    
-    // Clear previous timeout
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-    
-    // Set new timeout for debouncing (300ms)
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     searchTimeoutRef.current = setTimeout(() => {
       setDebouncedSearch(text);
     }, 300);
   }, []);
 
   useEffect(() => {
-    if (sharedUrl) {
-      setShowAddModal(true);
-    }
+    if (sharedUrl) setShowAddModal(true);
   }, [sharedUrl]);
 
   useEffect(() => {
-    if (!loading && !session) {
-      router.replace('/login');
-    }
+    if (!loading && !session) router.replace('/login');
   }, [session, loading, router]);
 
   if (loading) {
@@ -62,9 +54,7 @@ export default function Dashboard() {
     );
   }
 
-  if (!session) {
-    return <View className="flex-1 bg-slate-50 dark:bg-slate-900" />;
-  }
+  if (!session) return <View className="flex-1 bg-slate-50 dark:bg-slate-900" />;
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-900 relative">
@@ -99,16 +89,42 @@ export default function Dashboard() {
             <Search size={24} color={isDark ? '#f1f5f9' : '#334155'} strokeWidth={2.2} />
           </Pressable>
 
-          <Pressable
-            onPress={toggleTheme}
-            className="w-12 h-12 items-center justify-center rounded-[18px] bg-white/60 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50 shadow-sm active:scale-95 transition-all"
-          >
-            {isDark ? (
-              <Sun size={24} color="#fcd34d" strokeWidth={1.8} />
-            ) : (
-              <Moon size={24} color="#334155" strokeWidth={1.8} />
+          <View className="relative">
+            <Pressable
+              onPress={() => setShowMenu(!showMenu)}
+              className="w-12 h-12 items-center justify-center rounded-[18px] bg-white/60 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50 shadow-sm active:scale-95 transition-all"
+            >
+              <MoreVertical size={24} color={isDark ? '#f1f5f9' : '#334155'} strokeWidth={2.2} />
+            </Pressable>
+
+            {showMenu && (
+              <Animated.View 
+                entering={FadeIn.duration(200)} 
+                exiting={FadeOut.duration(150)}
+                style={styles.menu}
+                className="absolute right-0 top-14 w-48 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden z-50"
+              >
+                <Pressable 
+                  onPress={() => { setShowMenu(false); router.push('/(tabs)/settings'); }}
+                  className="px-5 py-4 active:bg-slate-50 dark:active:bg-slate-700 border-b border-slate-50 dark:border-slate-700"
+                >
+                  <Text className="font-bold text-slate-800 dark:text-white">Settings</Text>
+                </Pressable>
+                <Pressable 
+                  onPress={() => { setShowMenu(false); toggleTheme(); }}
+                  className="px-5 py-4 active:bg-slate-50 dark:active:bg-slate-700 border-b border-slate-50 dark:border-slate-700"
+                >
+                  <Text className="font-bold text-slate-800 dark:text-white">Toggle Theme</Text>
+                </Pressable>
+                <Pressable 
+                  onPress={() => { setShowMenu(false); signOut(); }}
+                  className="px-5 py-4 active:bg-slate-50 dark:active:bg-slate-700"
+                >
+                  <Text className="font-bold text-red-500">Sign Out</Text>
+                </Pressable>
+              </Animated.View>
             )}
-          </Pressable>
+          </View>
         </View>
       </View>
 
@@ -124,15 +140,13 @@ export default function Dashboard() {
       <LinkGrid
         searchQuery={debouncedSearch}
         onEdit={(link) => { setEditingLink(link); setShowAddModal(true); }}
-        // Padding: Header ~150. Bottom ~150 (Tabs 90 + FAB 64)
         contentContainerStyle={{ paddingTop: 150, paddingBottom: 150 }}
       />
 
-      {/* Liquid FAB (Bottom 160 -> Lowered to 110 since search bar is gone) */}
-      {/* TabBar ends at 90. FAB needs to be above it. 110 is safe. */}
+      {/* FAB */}
       <FloatingActionButton
         onPress={() => { setEditingLink(null); setShowAddModal(true); }}
-        style={{ bottom: 110 }}
+        style={{ bottom: 120 }}
       />
 
       {/* Add/Edit Modal */}
@@ -149,3 +163,13 @@ export default function Dashboard() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  menu: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 20,
+  }
+});

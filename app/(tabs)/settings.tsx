@@ -4,7 +4,10 @@ import {
     ChevronRight,
     FolderOpen,
     FolderPlus,
+    Grid,
     Info,
+    Layout as LayoutIcon,
+    List,
     LogOut,
     Moon,
     Palette,
@@ -13,7 +16,7 @@ import {
     User
 } from 'lucide-react-native';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View, StyleSheet } from 'react-native';
 import { Button } from '../../src/components/ui/Button';
 import { Input } from '../../src/components/ui/Input';
 import { Modal } from '../../src/components/ui/Modal';
@@ -22,11 +25,12 @@ import { useLinkContext } from '../../src/context/LinkContext';
 import { useTheme } from '../../src/context/ThemeContext';
 
 type ThemeOption = 'light' | 'dark' | 'system';
+type LayoutOption = 'grid' | 'list' | 'compact';
 
 export default function SettingsScreen() {
     const { signOut, user } = useAuth();
     const { categories, addCategory, deleteCategory, renameCategory } = useLinkContext();
-    const { theme: currentTheme, setTheme, isDark } = useTheme();
+    const { theme: currentTheme, setTheme, isDark, layout: currentLayout, setLayout } = useTheme();
     const [showModal, setShowModal] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
     const [editingCategory, setEditingCategory] = useState<string | null>(null);
@@ -71,16 +75,42 @@ export default function SettingsScreen() {
             className={`flex-1 p-4 rounded-2xl items-center justify-center transition-all ${
                 selected 
                     ? 'bg-emerald-500 shadow-lg shadow-emerald-500/30' 
-                    : 'bg-slate-100 dark:bg-slate-800'
+                    : 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700'
             }`}
         >
-            <View className={`p-3 rounded-full mb-2 ${selected ? 'bg-white/20' : 'bg-slate-200 dark:bg-slate-700'}`}>
+            <View className={`p-3 rounded-full mb-2 ${selected ? 'bg-white/20' : 'bg-slate-100 dark:bg-slate-700'}`}>
                 <Icon 
-                    size={24} 
-                    color={selected ? 'white' : isDark ? '#cbd5e1' : '#64748b'} 
+                    size={22} 
+                    color={selected ? 'white' : isDark ? '#94a3b8' : '#64748b'} 
                 />
             </View>
-            <Text className={`text-sm font-medium ${selected ? 'text-white' : 'text-slate-600 dark:text-slate-300'}`}>
+            <Text className={`text-[12px] font-bold uppercase tracking-wider ${selected ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}>
+                {label}
+            </Text>
+        </Pressable>
+    );
+
+    const LayoutCard = ({ option, label, icon: Icon, selected }: { 
+        option: LayoutOption; 
+        label: string; 
+        icon: any;
+        selected: boolean;
+    }) => (
+        <Pressable
+            onPress={() => setLayout(option)}
+            className={`flex-1 p-4 rounded-2xl items-center justify-center transition-all ${
+                selected 
+                    ? 'bg-emerald-500 shadow-lg shadow-emerald-500/30' 
+                    : 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700'
+            }`}
+        >
+            <View className={`p-3 rounded-full mb-2 ${selected ? 'bg-white/20' : 'bg-slate-100 dark:bg-slate-700'}`}>
+                <Icon 
+                    size={22} 
+                    color={selected ? 'white' : isDark ? '#94a3b8' : '#64748b'} 
+                />
+            </View>
+            <Text className={`text-[12px] font-bold uppercase tracking-wider ${selected ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`}>
                 {label}
             </Text>
         </Pressable>
@@ -91,80 +121,41 @@ export default function SettingsScreen() {
         icon: any;
         children: React.ReactNode;
     }) => (
-        <View className="mb-6">
-            <View className="flex-row items-center mb-3 px-1">
-                <Icon size={18} className="text-slate-400 mr-2" />
-                <Text className="text-sm font-semibold text-slate-400 uppercase tracking-wider">{title}</Text>
+        <View className="mb-8">
+            <View className="flex-row items-center mb-4 px-1">
+                <View className="w-8 h-8 rounded-lg bg-emerald-500/10 items-center justify-center mr-3">
+                    <Icon size={18} color="#10b981" />
+                </View>
+                <Text className="text-[13px] font-black text-slate-400 uppercase tracking-[2px]">{title}</Text>
             </View>
-            <View className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm">
+            <View className="bg-white/50 dark:bg-slate-900/50 rounded-3xl overflow-hidden border border-slate-100 dark:border-slate-800">
                 {children}
             </View>
         </View>
     );
 
-    const SettingRow = ({ 
-        icon: Icon, 
-        title, 
-        subtitle, 
-        onPress, 
-        rightElement,
-        danger = false 
-    }: { 
-        icon: any; 
-        title: string; 
-        subtitle?: string;
-        onPress?: () => void;
-        rightElement?: React.ReactNode;
-        danger?: boolean;
-    }) => (
-        <Pressable 
-            onPress={onPress}
-            className="flex-row items-center justify-between p-4 border-b border-slate-100 dark:border-slate-700 last:border-b-0 active:bg-slate-50 dark:active:bg-slate-700/50"
-        >
-            <View className="flex-row items-center flex-1">
-                <View className={`p-2.5 rounded-xl ${danger ? 'bg-red-50 dark:bg-red-900/20' : 'bg-slate-100 dark:bg-slate-700'}`}>
-                    <Icon 
-                        size={20} 
-                        color={danger ? '#ef4444' : isDark ? '#cbd5e1' : '#64748b'} 
-                    />
-                </View>
-                <View className="ml-3 flex-1">
-                    <Text className={`text-base font-semibold ${danger ? 'text-red-500' : 'text-slate-800 dark:text-slate-200'}`}>
-                        {title}
-                    </Text>
-                    {subtitle && (
-                        <Text className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{subtitle}</Text>
-                    )}
-                </View>
-            </View>
-            {rightElement || (onPress && (
-                <ChevronRight size={20} className="text-slate-300" />
-            ))}
-        </Pressable>
-    );
-
     return (
-        <View className="flex-1 bg-slate-50 dark:bg-slate-900">
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
-                {/* Header */}
-                <View className="pt-14 px-5 pb-6">
-                    <Text className="text-3xl font-bold text-slate-900 dark:text-white">Settings</Text>
-                    <Text className="text-slate-500 dark:text-slate-400 mt-1">Manage your preferences</Text>
+        <View className="flex-1 bg-slate-50 dark:bg-[#0f172a]">
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
+                {/* Premium Header */}
+                <View className="pt-20 px-8 pb-8">
+                    <Text className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">Settings</Text>
+                    <Text className="text-slate-500 dark:text-slate-400 font-medium mt-1">Personalize your experience</Text>
                 </View>
 
                 {/* Profile Card */}
-                <View className="mx-5 mb-6">
-                    <View className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-5 shadow-lg shadow-emerald-500/25">
+                <View className="mx-8 mb-10">
+                    <View className="bg-white dark:bg-slate-800 rounded-[32px] p-6 shadow-xl shadow-black/5 border border-slate-50 dark:border-slate-700">
                         <View className="flex-row items-center">
-                            <View className="w-14 h-14 rounded-full bg-white/20 items-center justify-center">
-                                <User size={28} color="white" />
+                            <View className="w-16 h-14 rounded-2xl bg-emerald-500 items-center justify-center shadow-lg shadow-emerald-500/40">
+                                <User size={32} color="white" />
                             </View>
-                            <View className="ml-4 flex-1">
-                                <Text className="text-white text-lg font-bold">
+                            <View className="ml-5 flex-1">
+                                <Text className="text-slate-900 dark:text-white text-xl font-black tracking-tight">
                                     {user?.email?.split('@')[0] || 'User'}
                                 </Text>
-                                <Text className="text-white/80 text-sm">
-                                    {user?.email || 'Sign in to sync your data'}
+                                <Text className="text-slate-500 dark:text-slate-400 font-bold text-xs uppercase tracking-wider mt-0.5">
+                                    {user?.email || 'Guest User'}
                                 </Text>
                             </View>
                         </View>
@@ -172,183 +163,108 @@ export default function SettingsScreen() {
                 </View>
 
                 {/* Appearance Section */}
-                <View className="px-5">
-                    <SettingSection title="Appearance" icon={Palette}>
-                        <View className="p-4">
-                            <Text className="text-slate-600 dark:text-slate-300 font-medium mb-3">Theme</Text>
+                <View className="px-8">
+                    <SettingSection title="Interface" icon={Palette}>
+                        <View className="p-6">
+                            <Text className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">Color Theme</Text>
+                            <View className="flex-row gap-3 mb-8">
+                                <ThemeCard option="light" label="Light" icon={Sun} selected={currentTheme === 'light'} />
+                                <ThemeCard option="dark" label="Dark" icon={Moon} selected={currentTheme === 'dark'} />
+                                <ThemeCard option="system" label="System" icon={AppWindow} selected={currentTheme === 'system'} />
+                            </View>
+
+                            <Text className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">Vault Layout</Text>
                             <View className="flex-row gap-3">
-                                <ThemeCard 
-                                    option="light" 
-                                    label="Light" 
-                                    icon={Sun} 
-                                    selected={currentTheme === 'light'} 
-                                />
-                                <ThemeCard 
-                                    option="dark" 
-                                    label="Dark" 
-                                    icon={Moon} 
-                                    selected={currentTheme === 'dark'} 
-                                />
-                                <ThemeCard 
-                                    option="system" 
-                                    label="System" 
-                                    icon={AppWindow} 
-                                    selected={currentTheme === 'system'} 
-                                />
+                                <LayoutCard option="grid" label="Grid" icon={Grid} selected={currentLayout === 'grid'} />
+                                <LayoutCard option="list" label="List" icon={List} selected={currentLayout === 'list'} />
+                                <LayoutCard option="compact" label="Compact" icon={LayoutIcon} selected={currentLayout === 'compact'} />
                             </View>
                         </View>
                     </SettingSection>
                 </View>
 
                 {/* Categories Section */}
-                <View className="px-5">
-                    <SettingSection title="Categories" icon={FolderOpen}>
+                <View className="px-8">
+                    <SettingSection title="Organization" icon={FolderOpen}>
                         <Pressable 
                             onPress={() => setCategoriesExpanded(!categoriesExpanded)}
-                            className="flex-row items-center justify-between p-4"
+                            className="flex-row items-center justify-between p-6"
                         >
-                            <View className="flex-row items-center flex-1">
-                                <View className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-700">
-                                    <FolderOpen size={20} color={isDark ? '#cbd5e1' : '#64748b'} />
-                                </View>
-                                <View className="ml-3">
-                                    <Text className="text-base font-semibold text-slate-800 dark:text-slate-200">
-                                        Manage Categories
-                                    </Text>
-                                    <Text className="text-sm text-slate-500 dark:text-slate-400">
-                                        {categories.length} category{categories.length !== 1 ? 'ies' : ''}
-                                    </Text>
+                            <View className="flex-row items-center">
+                                <Text className="text-lg font-black text-slate-800 dark:text-white tracking-tight">
+                                    Manage Categories
+                                </Text>
+                                <View className="ml-3 px-2 py-0.5 bg-emerald-500/10 rounded-full">
+                                    <Text className="text-[10px] font-black text-emerald-500">{categories.length}</Text>
                                 </View>
                             </View>
-                            {categoriesExpanded ? (
-                                <ChevronDown size={20} className="text-slate-400" />
-                            ) : (
-                                <ChevronRight size={20} className="text-slate-400" />
-                            )}
+                            <ChevronDown size={20} className={`text-slate-400 transition-transform ${categoriesExpanded ? '' : '-rotate-90'}`} />
                         </Pressable>
 
                         {categoriesExpanded && (
-                            <View className="border-t border-slate-100 dark:border-slate-700">
+                            <View className="px-6 pb-6">
                                 {categories.map((category, index) => (
-                                    <View 
-                                        key={category}
-                                        className={`flex-row items-center justify-between p-4 ${
-                                            index !== categories.length - 1 
-                                                ? 'border-b border-slate-100 dark:border-slate-700' 
-                                                : ''
-                                        }`}
-                                    >
-                                        <View className="flex-row items-center flex-1">
-                                            <View className="w-2 h-2 rounded-full bg-emerald-400 mr-3" />
-                                            <Text className="text-slate-700 dark:text-slate-200 font-medium">
-                                                {category}
-                                            </Text>
-                                        </View>
-                                        <View className="flex-row items-center gap-2">
+                                    <View key={category} className="flex-row items-center justify-between py-3">
+                                        <Text className="text-slate-700 dark:text-slate-200 font-bold">{category}</Text>
+                                        <View className="flex-row gap-2">
                                             <Pressable 
-                                                onPress={() => { 
-                                                    setEditingCategory(category); 
-                                                    setNewCategoryName(category); 
-                                                    setShowModal(true); 
-                                                }}
-                                                className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700"
+                                                onPress={() => { setEditingCategory(category); setNewCategoryName(category); setShowModal(true); }}
+                                                className="w-8 h-8 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800"
                                             >
-                                                <Text className="text-xs font-medium text-slate-600 dark:text-slate-300">Edit</Text>
+                                                <Palette size={14} color={isDark ? '#94a3b8' : '#64748b'} />
                                             </Pressable>
                                             <Pressable 
                                                 onPress={() => handleDelete(category)}
-                                                className="p-1.5 rounded-lg bg-red-50 dark:bg-red-900/20"
+                                                className="w-8 h-8 items-center justify-center rounded-lg bg-red-500/10"
                                             >
-                                                <Trash2 size={16} color="#ef4444" />
+                                                <Trash2 size={14} color="#ef4444" />
                                             </Pressable>
                                         </View>
                                     </View>
                                 ))}
-
-                                {categories.length === 0 && (
-                                    <View className="p-4 items-center">
-                                        <Text className="text-slate-400 text-sm">No categories yet</Text>
-                                    </View>
-                                )}
-
-                                <Pressable 
-                                    onPress={() => { 
-                                        setEditingCategory(null); 
-                                        setNewCategoryName(''); 
-                                        setShowModal(true); 
-                                    }}
-                                    className="flex-row items-center justify-center p-4 border-t border-slate-100 dark:border-slate-700 bg-emerald-50 dark:bg-emerald-900/10"
+                                <Button 
+                                    onPress={() => { setEditingCategory(null); setNewCategoryName(''); setShowModal(true); }}
+                                    variant="secondary"
+                                    className="mt-4 border-dashed border-2 border-emerald-500/30 bg-transparent"
                                 >
-                                    <FolderPlus size={18} color="#10b981" />
-                                    <Text className="text-emerald-600 dark:text-emerald-400 font-semibold ml-2">
-                                        Add New Category
-                                    </Text>
-                                </Pressable>
+                                    <Text className="text-emerald-500 font-black">+ Add Category</Text>
+                                </Button>
                             </View>
                         )}
                     </SettingSection>
                 </View>
 
-                {/* About Section */}
-                <View className="px-5">
-                    <SettingSection title="About" icon={Info}>
-                        <SettingRow 
-                            icon={AppWindow} 
-                            title="SnapLinq" 
-                            subtitle="Version 1.0.0"
-                        />
-                        <SettingRow 
-                            icon={Info} 
-                            title="About" 
-                            subtitle="Your personal link manager"
-                            onPress={() => Alert.alert("SnapLinq", "A beautiful link management app to organize your favorite links with categories and quick access.")}
-                        />
-                    </SettingSection>
-                </View>
-
-                {/* Logout Section */}
-                <View className="px-5 mt-2">
+                {/* Danger Zone */}
+                <View className="px-8 mt-4">
                     <Pressable
                         onPress={() => {
-                            Alert.alert("Log Out", "Are you sure you want to log out?", [
+                            Alert.alert("Log Out", "Are you sure?", [
                                 { text: "Cancel", style: "cancel" },
                                 { text: "Log Out", style: "destructive", onPress: signOut }
                             ]);
                         }}
-                        className="bg-red-50 dark:bg-red-900/20 p-4 rounded-2xl flex-row items-center justify-center"
+                        className="bg-red-500/10 p-6 rounded-[32px] flex-row items-center justify-center border border-red-500/20"
                     >
                         <LogOut size={20} color="#ef4444" />
-                        <Text className="text-red-500 font-semibold ml-2">Log Out</Text>
+                        <Text className="text-red-500 font-black ml-3 uppercase tracking-widest text-xs">Sign Out of Vault</Text>
                     </Pressable>
                 </View>
             </ScrollView>
 
-            {/* Modal */}
             <Modal
                 visible={showModal}
                 onClose={() => setShowModal(false)}
-                title={editingCategory ? "Edit Category" : "New Category"}
+                title={editingCategory ? "Rename Category" : "Create Category"}
             >
                 <Input
-                    placeholder="Category Name"
+                    placeholder="e.g. Design Inspiration"
                     value={newCategoryName}
                     onChangeText={setNewCategoryName}
                     autoFocus
                 />
-                <View className="flex-row gap-3 mt-4">
-                    <Button 
-                        variant="secondary" 
-                        onPress={() => setShowModal(false)}
-                        className="flex-1"
-                    >
-                        Cancel
-                    </Button>
-                    <Button 
-                        onPress={handleSave}
-                        className="flex-1"
-                    >
-                        Save
-                    </Button>
+                <View className="flex-row gap-3 mt-6">
+                    <Button variant="secondary" onPress={() => setShowModal(false)} className="flex-1">Cancel</Button>
+                    <Button onPress={handleSave} className="flex-1">Save</Button>
                 </View>
             </Modal>
         </View>

@@ -1,9 +1,13 @@
-import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Compass, Home, Settings } from 'lucide-react-native';
+import { Compass, Home } from 'lucide-react-native';
 import React, { useEffect } from 'react';
-import { Platform, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
-import Animated, { interpolateColor, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import Animated, {
+    interpolate,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
+    withTiming
+} from 'react-native-reanimated';
 import { useTheme } from '../../context/ThemeContext';
 
 interface LiquidTabBarProps {
@@ -12,168 +16,129 @@ interface LiquidTabBarProps {
     navigation: any;
 }
 
-const TAB_WIDTH = 80;
+const TAB_WIDTH = 70;
 
 export const LiquidTabBar = ({ state, descriptors, navigation }: LiquidTabBarProps) => {
     const { isDark } = useTheme();
-    const { width: windowWidth } = useWindowDimensions();
     
-    // Shared value for tracking the active index with animation
-    const activeIndex = useSharedValue(state.index);
+    // Filter routes to exclude settings as requested (it will move to 3-dot menu)
+    const filteredRoutes = state.routes.filter((r: any) => r.name !== 'settings');
+    const activeIndex = filteredRoutes.findIndex((r: any) => r.name === state.routes[state.index].name);
+
+    return (
+        <View style={styles.container} pointerEvents="box-none">
+            <View style={styles.floatingBar}>
+                {filteredRoutes.map((route: any, index: number) => {
+                    const isFocused = activeIndex === index;
+
+                    const onPress = () => {
+                        const event = navigation.emit({
+                            type: 'tabPress',
+                            target: route.key,
+                            canPreventDefault: true,
+                        });
+
+                        if (!isFocused && !event.defaultPrevented) {
+                            navigation.navigate(route.name);
+                        }
+                    };
+
+                    const getIcon = (name: string) => {
+                        switch (name) {
+                            case 'index': return Home;
+                            case 'explore': return Compass;
+                            default: return Home;
+                        }
+                    };
+
+                    const Icon = getIcon(route.name);
+
+                    return (
+                        <TabItem 
+                            key={route.key}
+                            isFocused={isFocused}
+                            onPress={onPress}
+                            Icon={Icon}
+                            isDark={isDark}
+                        />
+                    );
+                })}
+            </View>
+        </View>
+    );
+};
+
+const TabItem = ({ isFocused, onPress, Icon, isDark }: any) => {
+    const scale = useSharedValue(1);
+    const activeValue = useSharedValue(isFocused ? 1 : 0);
 
     useEffect(() => {
-        activeIndex.value = withSpring(state.index, {
-            damping: 15,
-            stiffness: 120,
-        });
-    }, [state.index]);
+        activeValue.value = withSpring(isFocused ? 1 : 0, { damping: 12 });
+    }, [isFocused]);
 
-    const indicatorStyle = useAnimatedStyle(() => {
-        const routesCount = state.routes.length;
-        const totalWidth = Math.min(windowWidth - 40, routesCount * TAB_WIDTH);
-        const itemWidth = totalWidth / routesCount;
-        
+    const animatedIconStyle = useAnimatedStyle(() => {
         return {
-            transform: [{ translateX: activeIndex.value * itemWidth }],
-            width: itemWidth,
+            transform: [
+                { scale: interpolate(activeValue.value, [0, 1], [1, 1.2]) },
+                { translateY: interpolate(activeValue.value, [0, 1], [0, -2]) }
+            ],
+            opacity: interpolate(activeValue.value, [0, 1], [0.5, 1]),
+        };
+    });
+
+    const glowStyle = useAnimatedStyle(() => {
+        return {
+            opacity: interpolate(activeValue.value, [0, 1], [0, 0.6]),
+            transform: [{ scale: interpolate(activeValue.value, [0, 1], [0.5, 1.5]) }],
         };
     });
 
     return (
-        <View style={styles.container} pointerEvents="box-none">
-            <View style={[styles.wrapper, { maxWidth: state.routes.length * TAB_WIDTH }]}>
-                <LinearGradient
-                    colors={isDark
-                        ? ['rgba(255,255,255,0.15)', 'rgba(255,255,255,0.05)']
-                        : ['rgba(255,255,255,0.8)', 'rgba(255,255,255,0.4)']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.borderWrapper}
-                >
-                    <BlurView
-                        intensity={Platform.OS === 'ios' ? 80 : 100}
-                        tint={isDark ? 'dark' : 'light'}
-                        style={styles.glassBar}
-                    >
-                        {/* Animated Indicator Background */}
-                        <Animated.View style={[styles.activeIndicator, indicatorStyle]}>
-                            <LinearGradient
-                                colors={['#34d399', '#10b981']}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                                style={styles.indicatorGradient}
-                            />
-                        </Animated.View>
-
-                        {/* Tab Content */}
-                        <View style={styles.tabContent}>
-                            {state.routes.map((route: any, index: number) => {
-                                const { options } = descriptors[route.key];
-                                const isFocused = state.index === index;
-
-                                const onPress = () => {
-                                    const event = navigation.emit({
-                                        type: 'tabPress',
-                                        target: route.key,
-                                        canPreventDefault: true,
-                                    });
-
-                                    if (!isFocused && !event.defaultPrevented) {
-                                        navigation.navigate(route.name);
-                                    }
-                                };
-
-                                // Map route names to icons
-                                const getIcon = (name: string) => {
-                                    switch (name) {
-                                        case 'index': return Home;
-                                        case 'explore': return Compass;
-                                        case 'settings': return Settings;
-                                        default: return Home;
-                                    }
-                                };
-
-                                const Icon = getIcon(route.name);
-
-                                return (
-                                    <Pressable
-                                        key={route.key}
-                                        onPress={onPress}
-                                        style={styles.tab}
-                                        android_ripple={{ color: 'rgba(52, 211, 153, 0.1)', borderless: true }}
-                                    >
-                                        <Icon
-                                            size={22}
-                                            color={isFocused ? '#ffffff' : (isDark ? 'rgba(255,255,255,0.5)' : '#64748b')}
-                                            strokeWidth={isFocused ? 2.5 : 2}
-                                        />
-                                    </Pressable>
-                                );
-                            })}
-                        </View>
-                    </BlurView>
-                </LinearGradient>
-            </View>
-        </View>
+        <Pressable
+            onPress={onPress}
+            onPressIn={() => { scale.value = withTiming(0.85); }}
+            onPressOut={() => { scale.value = withSpring(1); }}
+            style={styles.tab}
+        >
+            <Animated.View style={[styles.glow, glowStyle, { backgroundColor: '#10b981' }]} />
+            <Animated.View style={animatedIconStyle}>
+                <Icon
+                    size={26}
+                    color={isFocused ? '#10b981' : (isDark ? '#94a3b8' : '#64748b')}
+                    strokeWidth={isFocused ? 2.5 : 2}
+                />
+            </Animated.View>
+        </Pressable>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         position: 'absolute',
-        bottom: Platform.OS === 'ios' ? 40 : 25,
+        bottom: Platform.OS === 'ios' ? 45 : 30,
         left: 0,
         right: 0,
         alignItems: 'center',
-        paddingHorizontal: 20,
-        zIndex: 100,
+        zIndex: 1000,
     },
-    wrapper: {
-        width: '100%',
-        height: 64,
-        borderRadius: 24,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.2,
-        shadowRadius: 15,
-        elevation: 8,
-    },
-    borderWrapper: {
-        flex: 1,
-        borderRadius: 24,
-        padding: 1,
-    },
-    glassBar: {
-        flex: 1,
-        borderRadius: 23,
-        overflow: 'hidden',
+    floatingBar: {
         flexDirection: 'row',
-    },
-    activeIndicator: {
-        position: 'absolute',
-        top: 8,
-        bottom: 8,
-        left: 0,
-        paddingHorizontal: 8,
-        zIndex: 0,
-    },
-    indicatorGradient: {
-        flex: 1,
-        borderRadius: 16,
-        shadowColor: "#10b981",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 4,
-    },
-    tabContent: {
-        flex: 1,
-        flexDirection: 'row',
-        zIndex: 1,
+        alignItems: 'center',
+        gap: 25,
+        paddingHorizontal: 25,
+        paddingVertical: 12,
     },
     tab: {
-        flex: 1,
+        width: 50,
+        height: 50,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    glow: {
+        position: 'absolute',
+        width: 35,
+        height: 35,
+        borderRadius: 18,
+        filter: 'blur(10px)',
     }
 });

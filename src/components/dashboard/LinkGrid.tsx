@@ -1,6 +1,6 @@
 import { Trash2 } from 'lucide-react-native';
 import { useMemo } from 'react';
-import { FlatList, Pressable, Text, useWindowDimensions, View } from 'react-native';
+import { FlatList, Pressable, ScrollView, Text, View } from 'react-native';
 import { useLinkContext } from '../../context/LinkContext';
 import { LinkItem } from './LinkItem';
 
@@ -8,30 +8,24 @@ interface LinkGridProps {
     searchQuery: string;
     onEdit: (link: any) => void;
     contentContainerStyle?: any;
-    ListHeaderComponent?: any;
 }
 
-export const LinkGrid = ({ searchQuery, onEdit, contentContainerStyle, ListHeaderComponent }: LinkGridProps) => {
+export const LinkGrid = ({ searchQuery, onEdit, contentContainerStyle }: LinkGridProps) => {
     const { links, categories, deleteCategory, loading } = useLinkContext();
-    const { width } = useWindowDimensions();
 
-    // Responsive columns
-    // Mobile: 4 columns for denser grid as requested
-    // Tablet/Desktop: progressively more
-    const numColumns = width < 640 ? 4 : width < 1024 ? 6 : width < 1280 ? 8 : 10;
-
-    // Filter links
+    // Filter links based on search
     const filteredLinks = links.filter(link =>
         link.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         link.url.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    // Group items for SectionList
+    // Group items by category
     const sections = useMemo(() => categories
         .map(category => ({
             title: category,
             data: filteredLinks.filter(l => (l.category || 'Uncategorized') === category)
-        })), [categories, filteredLinks]);
+        }))
+        .filter(section => section.data.length > 0), [categories, filteredLinks]);
 
     const EmptyState = () => (
         <View className="flex-1 items-center justify-center pt-32 pb-20">
@@ -60,7 +54,6 @@ export const LinkGrid = ({ searchQuery, onEdit, contentContainerStyle, ListHeade
         );
     }
 
-    // Handle empty search results
     if (filteredLinks.length === 0 && searchQuery.trim() !== '') {
         return (
             <View className="flex-1 items-center justify-center pt-32">
@@ -71,79 +64,56 @@ export const LinkGrid = ({ searchQuery, onEdit, contentContainerStyle, ListHeade
         );
     }
 
-    if (filteredLinks.length === 0 && categories.length === 1 && categories[0] === 'Uncategorized') {
+    if (sections.length === 0) {
         return <EmptyState />;
     }
 
     return (
-        <View className="flex-1 px-4">
-            <FlatList
-                contentContainerStyle={contentContainerStyle}
-                data={sections}
-                keyExtractor={(item) => item.title}
-                renderItem={({ item: section }) => {
-                    if (section.data.length === 0) return null;
-
-                    const chunkedData = [];
-                    for (let i = 0; i < section.data.length; i += numColumns) {
-                        chunkedData.push(section.data.slice(i, i + numColumns));
-                    }
-
-                    return (
-                        <View className="mb-5">
-                            {/* Category Header */}
-                            <View className="flex-row items-center justify-between mb-4 pl-3 pr-2">
-                                <View className="flex-row items-center gap-3">
-                                    <View className="w-1.5 h-6 bg-gradient-to-b from-emerald-400 to-teal-500 rounded-full" />
-                                    <View>
-                                        <Text className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                                            {section.title}
-                                        </Text>
-                                        <Text className="text-[11px] text-slate-400 font-bold uppercase tracking-[1.5px] -mt-0.5">
-                                            {section.data.length} {section.data.length === 1 ? 'Link' : 'Links'}
-                                        </Text>
-                                    </View>
-                                </View>
-
-                                {section.title !== 'Uncategorized' && section.data.length === 0 && (
-                                    <Pressable
-                                        onPress={() => deleteCategory(section.title)}
-                                        className="p-2 -mr-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
-                                    >
-                                        <Trash2 size={18} className="text-red-500 opacity-70" />
-                                    </Pressable>
-                                )}
-                            </View>
-
-                            {/* Grid container */}
+        <FlatList
+            contentContainerStyle={contentContainerStyle}
+            data={sections}
+            keyExtractor={(item) => item.title}
+            showsVerticalScrollIndicator={false}
+            ListFooterComponent={<View className="h-40" />}
+            renderItem={({ item: section }) => (
+                <View className="mb-8">
+                    {/* Category Header with Elite Spacing */}
+                    <View className="flex-row items-center justify-between mb-5 px-6">
+                        <View className="flex-row items-center gap-3">
+                            <View className="w-1.5 h-6 bg-emerald-500 rounded-full" />
                             <View>
-                                {chunkedData.map((row, rowIndex) => (
-                                    <View key={rowIndex} className="flex-row justify-between mb-1">
-                                        {row.map((link: any) => (
-                                            <View key={link.id} style={{ width: `${100 / numColumns}%` }} className="items-center">
-                                                <LinkItem link={link} onEdit={onEdit} />
-                                            </View>
-                                        ))}
-                                        {/* Fill remaining space */}
-                                        {Array.from({ length: numColumns - row.length }).map((_, i) => (
-                                            <View key={`empty-${rowIndex}-${i}`} style={{ width: `${100 / numColumns}%` }} />
-                                        ))}
-                                    </View>
-                                ))}
-
-                                {/* Show message for empty customizable categories */}
-                                {section.data.length === 0 && section.title !== 'Uncategorized' && (
-                                    <View className="py-8 items-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl mx-2">
-                                        <Text className="text-slate-400 text-sm">No apps in this folder</Text>
-                                    </View>
-                                )}
+                                <Text className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">
+                                    {section.title}
+                                </Text>
+                                <Text className="text-[10px] text-slate-400 font-black uppercase tracking-[2px] -mt-1">
+                                    {section.data.length} {section.data.length === 1 ? 'Link' : 'Links'}
+                                </Text>
                             </View>
                         </View>
-                    )
-                }}
-                ListFooterComponent={<View className="h-32" />}
-                showsVerticalScrollIndicator={false}
-            />
-        </View>
+
+                        {section.title !== 'Uncategorized' && (
+                            <Pressable
+                                onPress={() => deleteCategory(section.title)}
+                                className="w-8 h-8 items-center justify-center rounded-full bg-red-500/5 active:bg-red-500/10"
+                            >
+                                <Trash2 size={14} color="#ef4444" opacity={0.6} />
+                            </Pressable>
+                        )}
+                    </View>
+
+                    {/* Elite Horizontal Scrolling Grid (iOS App Store Style) */}
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={{ paddingHorizontal: 20 }}
+                        decelerationRate="fast"
+                    >
+                        {section.data.map((link: any) => (
+                            <LinkItem key={link.id} link={link} onEdit={onEdit} />
+                        ))}
+                    </ScrollView>
+                </View>
+            )}
+        />
     );
 };

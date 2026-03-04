@@ -45,15 +45,15 @@ const LinkItemComponent = ({ link, onEdit }: { link: any, onEdit: (link: any) =>
 
 
     return (
-        <View className="items-center mb-8 mx-2">
+        <View className="items-center w-[84px] sm:w-[100px] mb-6">
             <Pressable
                 onPress={() => openLink(link.url)}
                 onLongPress={() => setShowMenu(true)}
                 delayLongPress={500}
-                className="group relative"
+                className="group items-center w-full"
             >
-                {/* Million-Dollar Glassmorphic Icon Card */}
-                <View className="w-[72px] h-[72px] sm:w-[84px] sm:h-[84px] mb-3 bg-white/80 dark:bg-slate-800/80 rounded-[24px] sm:rounded-[28px] items-center justify-center overflow-hidden shadow-lg border border-white/40 dark:border-slate-700/40 backdrop-blur-xl transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-2 group-active:scale-95 group-hover:shadow-emerald-500/20">
+                {/* Elite Apple-Style Icon Card */}
+                <View className="w-[68px] h-[68px] sm:w-[84px] sm:h-[84px] mb-2 bg-white/90 dark:bg-slate-800/90 rounded-[22px] sm:rounded-[28px] items-center justify-center overflow-hidden shadow-sm border border-white/50 dark:border-slate-700/50 backdrop-blur-2xl transition-all duration-300 group-hover:scale-105 group-hover:-translate-y-1 group-active:scale-95 group-hover:shadow-emerald-500/20">
                     {!imageError && link.icon ? (
                         <Image
                             source={{ uri: link.icon }}
@@ -63,32 +63,35 @@ const LinkItemComponent = ({ link, onEdit }: { link: any, onEdit: (link: any) =>
                         />
                     ) : (
                         <View className="w-full h-full bg-gradient-to-br from-emerald-400 to-teal-500 items-center justify-center">
-                            <Text className="text-2xl sm:text-3xl font-extrabold text-white drop-shadow-sm">{initial}</Text>
+                            <Text className="text-2xl sm:text-3xl font-black text-white drop-shadow-lg">{initial}</Text>
                         </View>
                     )}
                     
-                    {/* Hover Glow Effect */}
-                    <View className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    {/* Premium Hover Overlay */}
+                    <View className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </View>
 
-                {/* Refined Label with Better Typography */}
-                <Text
-                    className="text-[11px] sm:text-[13px] font-bold text-slate-700 dark:text-slate-200 text-center w-full px-2 tracking-tight opacity-90 group-hover:opacity-100 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition-colors"
-                    numberOfLines={1}
-                >
-                    {link.title}
-                </Text>
+                {/* Highly Readable Elite Typography */}
+                <View className="h-[32px] justify-start items-center px-1">
+                    <Text
+                        className="text-[11px] sm:text-[12px] font-bold text-slate-800 dark:text-slate-100 text-center leading-tight tracking-tight opacity-90 group-hover:opacity-100 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition-colors"
+                        numberOfLines={2}
+                        ellipsizeMode="tail"
+                    >
+                        {link.title}
+                    </Text>
+                </View>
 
-                {/* Context Menu Trigger - Premium Minimalist Button */}
+                {/* Discreet Web Context Menu */}
                 {Platform.OS === 'web' && (
                     <Pressable
-                        className="absolute -top-2 -right-2 w-7 h-7 items-center justify-center rounded-full bg-white dark:bg-slate-700 shadow-md opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-emerald-500 hover:scale-110 border border-slate-100 dark:border-slate-600"
+                        className="absolute -top-1 -right-1 w-6 h-6 items-center justify-center rounded-full bg-white dark:bg-slate-700 shadow-md opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-emerald-500 hover:scale-110 border border-slate-100 dark:border-slate-600"
                         onPress={(e) => {
                             e.stopPropagation();
                             setShowMenu(true);
                         }}
                     >
-                        <MoreHorizontal size={14} color="#64748b" />
+                        <MoreHorizontal size={12} color="#64748b" />
                     </Pressable>
                 )}
             </Pressable>
