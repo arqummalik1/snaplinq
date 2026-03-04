@@ -21,8 +21,8 @@ const TAB_WIDTH = 70;
 export const LiquidTabBar = ({ state, descriptors, navigation }: LiquidTabBarProps) => {
     const { isDark } = useTheme();
     
-    // Filter routes to exclude settings as requested (it will move to 3-dot menu)
-    const filteredRoutes = state.routes.filter((r: any) => r.name !== 'settings');
+    // Filter routes to exclude settings and explore as requested
+    const filteredRoutes = state.routes.filter((r: any) => r.name !== 'settings' && r.name !== 'explore');
     const activeIndex = filteredRoutes.findIndex((r: any) => r.name === state.routes[state.index].name);
 
     return (

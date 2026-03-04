@@ -1,6 +1,7 @@
 import { Trash2 } from 'lucide-react-native';
 import { useMemo } from 'react';
-import { FlatList, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { useLinkContext } from '../../context/LinkContext';
 import { LinkItem } from './LinkItem';
 
@@ -8,10 +9,11 @@ interface LinkGridProps {
     searchQuery: string;
     onEdit: (link: any) => void;
     contentContainerStyle?: any;
+    onScroll?: any;
 }
 
-export const LinkGrid = ({ searchQuery, onEdit, contentContainerStyle }: LinkGridProps) => {
-    const { links, categories, deleteCategory, loading } = useLinkContext();
+export const LinkGrid = ({ searchQuery, onEdit, contentContainerStyle, onScroll }: LinkGridProps) => {
+    const { links, recentLinks, dailyRecommendations, categories, deleteCategory, loading } = useLinkContext();
 
     // Filter links based on search
     const filteredLinks = links.filter(link =>
@@ -19,7 +21,9 @@ export const LinkGrid = ({ searchQuery, onEdit, contentContainerStyle }: LinkGri
         link.url.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    // Group items by category
+    const isSearching = searchQuery.trim() !== '';
+
+    // Group items by category (only for the main list)
     const sections = useMemo(() => categories
         .map(category => ({
             title: category,
@@ -54,7 +58,7 @@ export const LinkGrid = ({ searchQuery, onEdit, contentContainerStyle }: LinkGri
         );
     }
 
-    if (filteredLinks.length === 0 && searchQuery.trim() !== '') {
+    if (filteredLinks.length === 0 && isSearching) {
         return (
             <View className="flex-1 items-center justify-center pt-32">
                 <Text className="text-4xl mb-4">🔍</Text>
@@ -64,16 +68,66 @@ export const LinkGrid = ({ searchQuery, onEdit, contentContainerStyle }: LinkGri
         );
     }
 
-    if (sections.length === 0) {
+    if (links.length === 0) {
         return <EmptyState />;
     }
 
+    const HorizontalSection = ({ title, subtitle, data, icon }: { title: string, subtitle?: string, data: any[], icon?: string }) => {
+        if (data.length === 0) return null;
+        return (
+            <View className="mb-8">
+                <View className="flex-row items-center justify-between mb-5 px-6">
+                    <View className="flex-row items-center gap-3">
+                        <View className="w-1.5 h-6 bg-emerald-500 rounded-full" />
+                        <View>
+                            <Text className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">
+                                {title}
+                            </Text>
+                            {subtitle && (
+                                <Text className="text-[10px] text-slate-400 font-black uppercase tracking-[2px] -mt-1">
+                                    {subtitle}
+                                </Text>
+                            )}
+                        </View>
+                    </View>
+                </View>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ paddingHorizontal: 20 }}
+                    decelerationRate="fast"
+                >
+                    {data.map((link: any) => (
+                        <LinkItem key={`${title}-${link.id}`} link={link} onEdit={onEdit} />
+                    ))}
+                </ScrollView>
+            </View>
+        );
+    };
+
     return (
-        <FlatList
+        <Animated.FlatList
+            onScroll={onScroll}
+            scrollEventThrottle={16}
             contentContainerStyle={contentContainerStyle}
             data={sections}
             keyExtractor={(item) => item.title}
             showsVerticalScrollIndicator={false}
+            ListHeaderComponent={!isSearching ? (
+                <View>
+                    <HorizontalSection 
+                        title="Daily Picks" 
+                        subtitle="Curated for you today" 
+                        data={dailyRecommendations} 
+                    />
+                    <HorizontalSection 
+                        title="Recents" 
+                        subtitle="Jump back in" 
+                        data={recentLinks} 
+                    />
+                    <View className="h-4" />
+                </View>
+            ) : null}
             ListFooterComponent={<View className="h-40" />}
             renderItem={({ item: section }) => (
                 <View className="mb-8">

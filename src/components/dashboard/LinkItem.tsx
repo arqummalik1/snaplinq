@@ -18,7 +18,7 @@ const openLink = async (url: string) => {
 
 
 const LinkItemComponent = ({ link, onEdit }: { link: any, onEdit: (link: any) => void }) => {
-    const { deleteLink } = useLinkContext();
+    const { deleteLink, markVisited } = useLinkContext();
     const [showMenu, setShowMenu] = useState(false);
     const [imageError, setImageError] = useState(false);
 
@@ -26,6 +26,15 @@ const LinkItemComponent = ({ link, onEdit }: { link: any, onEdit: (link: any) =>
     const initial = link.title?.charAt(0)?.toUpperCase() || '#';
 
     const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+
+    const handlePress = async () => {
+        try {
+            await markVisited(link.id);
+            await openLink(link.url);
+        } catch (e) {
+            console.error("Link Open Error:", e);
+        }
+    };
 
     const handleDeleteClick = () => {
         setShowMenu(false);
@@ -47,7 +56,7 @@ const LinkItemComponent = ({ link, onEdit }: { link: any, onEdit: (link: any) =>
     return (
         <View className="items-center w-[84px] sm:w-[100px] mb-6">
             <Pressable
-                onPress={() => openLink(link.url)}
+                onPress={handlePress}
                 onLongPress={() => setShowMenu(true)}
                 delayLongPress={500}
                 className="group items-center w-full"
@@ -67,6 +76,11 @@ const LinkItemComponent = ({ link, onEdit }: { link: any, onEdit: (link: any) =>
                         </View>
                     )}
                     
+                    {/* Visited Status Indicator (Liquid Glass Dot) */}
+                    {!link.visited && (
+                        <View className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-800 shadow-sm z-10" />
+                    )}
+
                     {/* Premium Hover Overlay */}
                     <View className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </View>
@@ -74,7 +88,11 @@ const LinkItemComponent = ({ link, onEdit }: { link: any, onEdit: (link: any) =>
                 {/* Highly Readable Elite Typography */}
                 <View className="h-[32px] justify-start items-center px-1">
                     <Text
-                        className="text-[11px] sm:text-[12px] font-bold text-slate-800 dark:text-slate-100 text-center leading-tight tracking-tight opacity-90 group-hover:opacity-100 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition-colors"
+                        className={`text-[11px] sm:text-[12px] font-bold text-center leading-tight tracking-tight transition-colors ${
+                            link.visited 
+                                ? 'text-slate-400 dark:text-slate-500' 
+                                : 'text-slate-800 dark:text-slate-100'
+                        } group-hover:text-emerald-500 dark:group-hover:text-emerald-400`}
                         numberOfLines={2}
                         ellipsizeMode="tail"
                     >

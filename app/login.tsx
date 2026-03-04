@@ -2,8 +2,8 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
+    FadeIn,
     FadeInDown,
-    FadeInUp,
     useAnimatedStyle,
     useSharedValue,
     withRepeat,
@@ -157,72 +157,76 @@ export default function Login() {
     };
 
     return (
-        <View className="flex-1 bg-[#f8fafc] dark:bg-[#0f172a] justify-center items-center p-6">
-            {/* Ultra-Premium Ambient Background */}
+        <View className="flex-1 bg-[#f8fafc] dark:bg-[#020617] justify-center items-center p-4">
+            {/* Ultra-Premium Web Ambient Background */}
             <Animated.View 
-                entering={FadeInUp.delay(200).duration(1000)}
+                entering={FadeIn.duration(1500)}
                 style={[styles.orb, styles.orb1]} 
             />
             <Animated.View 
-                entering={FadeInDown.delay(400).duration(1000)}
+                entering={FadeIn.duration(1500).delay(200)}
                 style={[styles.orb, styles.orb2]} 
             />
-            <View style={[styles.orb, styles.orb3]} />
+            <Animated.View 
+                entering={FadeIn.duration(1500).delay(400)}
+                style={[styles.orb, styles.orb3]} 
+            />
 
             <Animated.View 
-                entering={FadeInDown.springify().damping(15)}
-                className="w-full max-w-md bg-white/80 dark:bg-slate-900/80 p-10 rounded-[48px] shadow-2xl border border-white/50 dark:border-slate-800/50 backdrop-blur-3xl"
+                entering={FadeInDown.springify().damping(18).stiffness(100)}
+                className="w-full max-w-[480px] bg-white/70 dark:bg-slate-900/70 p-12 rounded-[48px] shadow-2xl border border-white/50 dark:border-slate-800/50 backdrop-blur-3xl"
                 style={styles.cardShadow}
             >
-                {/* Logo Section */}
-                <Animated.View style={[styles.center, logoAnimatedStyle]} className="mb-10">
-                    <Logo width={100} height={100} className="shadow-2xl" />
-                    <Animated.Text 
-                        entering={FadeInDown.delay(300)}
-                        className="text-3xl font-black text-slate-900 dark:text-white mt-4 tracking-tighter"
-                    >
+                {/* Logo & Brand Header */}
+                <View className="items-center mb-12">
+                    <Animated.View style={logoAnimatedStyle}>
+                        <View className="bg-white dark:bg-slate-800 p-6 rounded-[32px] shadow-2xl shadow-emerald-500/20 border border-slate-100 dark:border-slate-700">
+                            <Logo width={64} height={64} />
+                        </View>
+                    </Animated.View>
+                    <Text className="text-[42px] font-black text-slate-900 dark:text-white mt-8 tracking-[-2px] leading-tight">
                         Snaplinq
-                    </Animated.Text>
-                    <Text className="text-slate-500 dark:text-slate-400 font-medium tracking-wide uppercase text-[10px] mt-1">
-                        Your Intelligent Link Vault
                     </Text>
-                </Animated.View>
-
-                {/* Form Context */}
-                <View className="mb-8">
-                    <Text className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-                        {isResettingPassword ? "Reset Access" : isSignUp ? "Get Started" : "Welcome Back"}
-                    </Text>
-                    <Text className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">
-                        {isResettingPassword 
-                            ? "We'll send a recovery link to your inbox." 
-                            : isSignUp ? "Create an account to start curating your digital world." : "Sign in to access your curated collection."}
+                    <Text className="text-slate-500 dark:text-slate-400 font-bold tracking-[3px] uppercase text-[10px] mt-2">
+                        Intelligent Link Vault
                     </Text>
                 </View>
 
-                {/* Authentication Options */}
+                {/* Authentication Form Context */}
+                <View className="mb-10">
+                    <Text className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-2">
+                        {isResettingPassword ? "Recover" : isSignUp ? "Create" : "Welcome"}
+                    </Text>
+                    <Text className="text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+                        {isResettingPassword 
+                            ? "Enter your email to reset access." 
+                            : isSignUp ? "Join the elite circle of link curators." : "Sign in to your private collection."}
+                    </Text>
+                </View>
+
+                {/* Google Auth Integration */}
                 {!isResettingPassword && (
-                    <View className="mb-8">
+                    <View className="mb-10">
                         <Button 
                             variant="secondary" 
                             onPress={handleGoogle} 
-                            className="w-full h-14 rounded-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 shadow-sm"
+                            className="w-full h-16 rounded-[24px] bg-white dark:bg-slate-800"
                         >
-                            <View className="flex-row items-center justify-center gap-3">
-                                <Text className="text-lg">G</Text>
-                                <Text className="font-bold text-slate-700 dark:text-slate-200">Continue with Google</Text>
+                            <View className="flex-row items-center justify-center gap-4">
+                                <Text className="text-xl">G</Text>
+                                <Text className="font-bold text-slate-700 dark:text-slate-200 tracking-tight">Continue with Google</Text>
                             </View>
                         </Button>
 
-                        <View className="flex-row items-center my-8">
-                            <View className="flex-1 h-[1px] bg-slate-100 dark:bg-slate-800" />
-                            <Text className="mx-4 text-[10px] font-bold text-slate-400 uppercase tracking-[2px]">Or Email</Text>
-                            <View className="flex-1 h-[1px] bg-slate-100 dark:bg-slate-800" />
+                        <View className="flex-row items-center my-10 px-4">
+                            <View className="flex-1 h-[1px] bg-slate-200 dark:bg-slate-800" />
+                            <Text className="mx-6 text-[10px] font-black text-slate-400 uppercase tracking-[4px]">OR</Text>
+                            <View className="flex-1 h-[1px] bg-slate-200 dark:bg-slate-800" />
                         </View>
                     </View>
                 )}
 
-                <View className="space-y-5">
+                <View className="space-y-6">
                     <Input
                         label="Email Address"
                         placeholder="name@example.com"
@@ -246,7 +250,7 @@ export default function Login() {
                                     onPress={() => setIsResettingPassword(true)}
                                     className="absolute right-0 top-0"
                                 >
-                                    <Text className="text-emerald-500 font-bold text-[11px] uppercase tracking-wider">Forgot?</Text>
+                                    <Text className="text-emerald-500 font-black text-[10px] uppercase tracking-widest">Forgot?</Text>
                                 </Pressable>
                             )}
                         </View>
@@ -263,41 +267,41 @@ export default function Login() {
                     )}
                 </View>
 
-                {/* Actions */}
-                <View className="mt-10">
+                {/* Primary Actions */}
+                <View className="mt-12">
                     <Button 
                         onPress={isResettingPassword ? handleForgotPassword : handleAuth} 
                         loading={loading}
-                        className="h-14 rounded-2xl shadow-xl shadow-emerald-500/30"
+                        className="h-16 rounded-[24px] shadow-2xl shadow-emerald-500/40"
                     >
-                        {isResettingPassword ? "Send Recovery Link" : isSignUp ? "Create Account" : "Sign In"}
+                        {isResettingPassword ? "Send Recovery Link" : isSignUp ? "Initialize Account" : "Enter Vault"}
                     </Button>
 
                     {isResettingPassword && (
                         <Button 
                             variant="ghost" 
                             onPress={() => setIsResettingPassword(false)}
-                            className="mt-4"
+                            className="mt-6"
                         >
-                            Back to Sign In
+                            Return to Entry
                         </Button>
                     )}
                 </View>
 
-                {/* Toggle Mode */}
+                {/* Mode Switcher */}
                 {!isResettingPassword && (
-                    <View className="mt-8 flex-row justify-center items-center">
-                        <Text className="text-slate-400 dark:text-slate-500 text-sm">
-                            {isSignUp ? "Already a member?" : "New to Snaplinq?"}
+                    <View className="mt-10 flex-row justify-center items-center">
+                        <Text className="text-slate-400 dark:text-slate-500 font-medium">
+                            {isSignUp ? "Member already?" : "New curator?"}
                         </Text>
                         <Pressable 
                             onPress={() => {
                                 setIsSignUp(!isSignUp);
                                 logoScale.value = withSequence(withSpring(1.2), withSpring(1));
                             }}
-                            className="ml-2"
+                            className="ml-3"
                         >
-                            <Text className="text-emerald-500 font-black text-sm">
+                            <Text className="text-emerald-500 font-black tracking-tight">
                                 {isSignUp ? "Sign In" : "Join Now"}
                             </Text>
                         </Pressable>
@@ -315,38 +319,38 @@ const styles = StyleSheet.create({
     },
     orb: {
         position: 'absolute',
-        borderRadius: 999,
-        filter: 'blur(100px)',
+        borderRadius: 9999,
+        filter: 'blur(120px)',
     },
     orb1: {
-        top: -100,
+        top: -200,
         right: -100,
-        width: 500,
-        height: 500,
+        width: 800,
+        height: 800,
         backgroundColor: '#10b981',
-        opacity: 0.15,
-    },
-    orb2: {
-        bottom: -150,
-        left: -150,
-        width: 600,
-        height: 600,
-        backgroundColor: '#6366f1',
         opacity: 0.12,
     },
+    orb2: {
+        bottom: -300,
+        left: -200,
+        width: 900,
+        height: 900,
+        backgroundColor: '#6366f1',
+        opacity: 0.1,
+    },
     orb3: {
-        top: '20%',
-        left: '10%',
-        width: 300,
-        height: 300,
+        top: '15%',
+        left: '-10%',
+        width: 400,
+        height: 400,
         backgroundColor: '#f59e0b',
-        opacity: 0.05,
+        opacity: 0.04,
     },
     cardShadow: {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 20 },
-        shadowOpacity: 0.1,
-        shadowRadius: 40,
-        elevation: 10,
+        shadowOffset: { width: 0, height: 40 },
+        shadowOpacity: 0.15,
+        shadowRadius: 60,
+        elevation: 20,
     }
 });
