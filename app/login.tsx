@@ -120,8 +120,8 @@ export default function Login() {
         setLoading(true);
         try {
             if (isSignUp) {
-                const { data, error } = await supabase.auth.signUp({ 
-                    email: trimmedEmail, 
+                const { data, error } = await supabase.auth.signUp({
+                    email: trimmedEmail,
                     password,
                     options: { data: { full_name: '' } }
                 });
@@ -159,29 +159,29 @@ export default function Login() {
     return (
         <View className="flex-1 bg-[#f8fafc] dark:bg-[#020617] justify-center items-center p-4">
             {/* Ultra-Premium Web Ambient Background */}
-            <Animated.View 
+            <Animated.View
                 entering={FadeIn.duration(1500)}
-                style={[styles.orb, styles.orb1]} 
+                style={[styles.orb, styles.orb1]}
             />
-            <Animated.View 
+            <Animated.View
                 entering={FadeIn.duration(1500).delay(200)}
-                style={[styles.orb, styles.orb2]} 
+                style={[styles.orb, styles.orb2]}
             />
-            <Animated.View 
+            <Animated.View
                 entering={FadeIn.duration(1500).delay(400)}
-                style={[styles.orb, styles.orb3]} 
+                style={[styles.orb, styles.orb3]}
             />
 
-            <Animated.View 
+            <Animated.View
                 entering={FadeInDown.springify().damping(18).stiffness(100)}
-                className="w-full max-w-[480px] bg-white/70 dark:bg-slate-900/70 p-12 rounded-[48px] shadow-2xl border border-white/50 dark:border-slate-800/50 backdrop-blur-3xl"
+                className="w-full max-w-[440px] bg-white/80 dark:bg-slate-900/80 p-6 sm:p-10 rounded-[32px] sm:rounded-[48px] shadow-2xl border border-white/50 dark:border-slate-800/50 backdrop-blur-3xl"
                 style={styles.cardShadow}
             >
                 {/* Logo & Brand Header */}
-                <View className="items-center mb-12">
+                <View className="items-center mb-10">
                     <Animated.View style={logoAnimatedStyle}>
-                        <View className="bg-white dark:bg-slate-800 p-6 rounded-[32px] shadow-2xl shadow-emerald-500/20 border border-slate-100 dark:border-slate-700">
-                            <Logo width={64} height={64} />
+                        <View className="bg-white dark:bg-slate-800 p-5 sm:p-6 rounded-[24px] sm:rounded-[32px] shadow-2xl shadow-emerald-500/20 border border-slate-100 dark:border-slate-700">
+                            <Logo width={56} height={56} />
                         </View>
                     </Animated.View>
                     <Text className="text-[42px] font-black text-slate-900 dark:text-white mt-8 tracking-[-2px] leading-tight">
@@ -198,8 +198,8 @@ export default function Login() {
                         {isResettingPassword ? "Recover" : isSignUp ? "Create" : "Welcome"}
                     </Text>
                     <Text className="text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
-                        {isResettingPassword 
-                            ? "Enter your email to reset access." 
+                        {isResettingPassword
+                            ? "Enter your email to reset access."
                             : isSignUp ? "Join the elite circle of link curators." : "Sign in to your private collection."}
                     </Text>
                 </View>
@@ -207,9 +207,9 @@ export default function Login() {
                 {/* Google Auth Integration */}
                 {!isResettingPassword && (
                     <View className="mb-10">
-                        <Button 
-                            variant="secondary" 
-                            onPress={handleGoogle} 
+                        <Button
+                            variant="secondary"
+                            onPress={handleGoogle}
                             className="w-full h-16 rounded-[24px] bg-white dark:bg-slate-800"
                         >
                             <View className="flex-row items-center justify-center gap-4">
@@ -235,7 +235,7 @@ export default function Login() {
                         autoCapitalize="none"
                         keyboardType="email-address"
                     />
-                    
+
                     {!isResettingPassword && (
                         <View>
                             <Input
@@ -246,7 +246,7 @@ export default function Login() {
                                 secureTextEntry
                             />
                             {!isSignUp && (
-                                <Pressable 
+                                <Pressable
                                     onPress={() => setIsResettingPassword(true)}
                                     className="absolute right-0 top-0"
                                 >
@@ -255,7 +255,7 @@ export default function Login() {
                             )}
                         </View>
                     )}
-                    
+
                     {isSignUp && (
                         <Input
                             label="Confirm Password"
@@ -269,8 +269,8 @@ export default function Login() {
 
                 {/* Primary Actions */}
                 <View className="mt-12">
-                    <Button 
-                        onPress={isResettingPassword ? handleForgotPassword : handleAuth} 
+                    <Button
+                        onPress={isResettingPassword ? handleForgotPassword : handleAuth}
                         loading={loading}
                         className="h-16 rounded-[24px] shadow-2xl shadow-emerald-500/40"
                     >
@@ -278,8 +278,8 @@ export default function Login() {
                     </Button>
 
                     {isResettingPassword && (
-                        <Button 
-                            variant="ghost" 
+                        <Button
+                            variant="ghost"
                             onPress={() => setIsResettingPassword(false)}
                             className="mt-6"
                         >
@@ -294,7 +294,7 @@ export default function Login() {
                         <Text className="text-slate-400 dark:text-slate-500 font-medium">
                             {isSignUp ? "Member already?" : "New curator?"}
                         </Text>
-                        <Pressable 
+                        <Pressable
                             onPress={() => {
                                 setIsSignUp(!isSignUp);
                                 logoScale.value = withSequence(withSpring(1.2), withSpring(1));

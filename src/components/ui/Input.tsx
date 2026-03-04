@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Text, TextInput, TextInputProps, View } from 'react-native';
+import { Platform, Text, TextInput, TextInputProps, View } from 'react-native';
 import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
 interface InputProps extends TextInputProps {
@@ -36,15 +36,16 @@ export const Input = ({ label, error, className, onFocus, onBlur, ...props }: In
                     {label}
                 </Text>
             )}
-            <Animated.View 
-                style={[borderStyle]}
-                className="rounded-2xl bg-slate-100/80 dark:bg-slate-800/80 overflow-hidden"
+            <Animated.View
+                style={[borderStyle, { backgroundColor: 'transparent' }]}
+                className="rounded-xl sm:rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm"
             >
                 <TextInput
                     placeholderTextColor="#94a3b8"
                     onFocus={handleFocus}
                     onBlur={handleBlur}
-                    className={`w-full px-5 py-4 text-[16px] text-slate-900 dark:text-white ${className}`}
+                    style={[{ minHeight: 48 }, (Platform.OS === 'web' ? { outlineStyle: 'none' } as any : {})]}
+                    className={`w-full px-4 sm:px-5 py-3 sm:py-4 text-[15px] sm:text-[16px] text-slate-900 dark:text-white ${className}`}
                     {...props}
                 />
             </Animated.View>

@@ -11,9 +11,13 @@ import { Link } from '../../types';
 import { LinkOptionsSheet } from './LinkOptionsSheet';
 
 // Utility to open link in browser
-const openLink = async (url: string) => {
+const openLink = (url: string) => {
     try {
-        await WebBrowser.openBrowserAsync(url);
+        if (Platform.OS === 'web') {
+            window.open(url, '_blank');
+        } else {
+            WebBrowser.openBrowserAsync(url).catch(console.error);
+        }
     } catch (e) {
         console.error(e);
     }
@@ -50,11 +54,12 @@ const LinkItemComponent = ({ link, onEdit }: LinkItemProps) => {
     const initial = useMemo(() => title.charAt(0).toUpperCase(), [title]);
     const colors = useMemo(() => getFallbackColors(title) as [string, string], [title]);
 
-    const handlePress = useCallback(async () => {
+    const handlePress = useCallback(() => {
         try {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            await markVisited(link.id);
-            await openLink(link.url);
+            // Do not await markVisited to prevent popup blocking on web
+            markVisited(link.id).catch(console.error);
+            openLink(link.url);
         } catch (e) {
             console.error('Link Open Error:', e);
         }
