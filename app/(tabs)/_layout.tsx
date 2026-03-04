@@ -1,13 +1,10 @@
 import { Tabs } from 'expo-router';
-import { LiquidTabBar } from '../../src/components/ui/LiquidTabBar';
 
 export default function TabLayout() {
   return (
     <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: { display: 'none' }, // Completely hide the tab bar
-      }}
+      screenOptions={{ headerShown: false }}
+      tabBar={() => null}
     >
       <Tabs.Screen
         name="index"

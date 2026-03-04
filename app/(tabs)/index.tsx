@@ -1,7 +1,8 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { MoreVertical, Search } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Animated, {
   Extrapolate,
   FadeOut,
@@ -11,6 +12,7 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue
 } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Fonts } from '../../constants/theme';
 import { AddLinkModal } from '../../src/components/dashboard/AddLinkModal';
 import { LinkGrid } from '../../src/components/dashboard/LinkGrid';
@@ -25,6 +27,7 @@ import { useTheme } from '../../src/context/ThemeContext';
 export default function Dashboard() {
   const router = useRouter();
   const { width: windowWidth } = useWindowDimensions();
+  const { top: safeTop } = useSafeAreaInsets();
   const { session, loading, signOut } = useAuth();
   const { toggleTheme, isDark } = useTheme();
   const { sharedUrl, clearSharedUrl } = useShare();
@@ -43,39 +46,30 @@ export default function Dashboard() {
     scrollY.value = event.contentOffset.y;
   });
 
+  const HEADER_CONTENT_HEIGHT = 64; // Fixed content height (logo row)
+  const HEADER_TOTAL_HEIGHT = safeTop + HEADER_CONTENT_HEIGHT;
+
   const headerStyle = useAnimatedStyle(() => {
-    const height = interpolate(
-      scrollY.value,
-      [0, 50],
-      [100, 75],
-      Extrapolate.CLAMP
-    );
     const opacity = interpolate(
       scrollY.value,
-      [0, 100],
-      [1, 0.98],
+      [0, 60],
+      [1, 0.97],
       Extrapolate.CLAMP
     );
     const translateY = interpolate(
       scrollY.value,
-      [0, 50],
-      [0, -5],
+      [0, 60],
+      [0, -4],
       Extrapolate.CLAMP
     );
-
-    return {
-      height,
-      opacity,
-      transform: [{ translateY }],
-      paddingTop: interpolate(scrollY.value, [0, 50], [45, 15], Extrapolate.CLAMP),
-    };
+    return { opacity, transform: [{ translateY }] };
   });
 
   const logoStyle = useAnimatedStyle(() => {
     const scale = interpolate(
       scrollY.value,
-      [0, 50],
-      [1, 0.8],
+      [0, 60],
+      [1, 0.88],
       Extrapolate.CLAMP
     );
     return { transform: [{ scale }] };
@@ -103,84 +97,114 @@ export default function Dashboard() {
   if (!session) return null;
 
   return (
-    <View className="flex-1 bg-slate-50 dark:bg-[#0f172a] relative">
-      {/* Premium Collapsible Header */}
+    <View style={{ flex: 1 }} className="bg-slate-50 dark:bg-[#0f172a]">
+
+      {/* ══════════════════════════════════════════════
+          PREMIUM HEADER
+          Fixed height = safeTop + 64px content row
+          Logo left  |  Search + Menu right (top-right corner)
+      ═══════════════════════════════════════════════ */}
       <Animated.View
-        style={[headerStyle, styles.headerContainer]}
-        className="absolute top-0 left-0 right-0 z-40 bg-white/70 dark:bg-slate-900/70 border-b border-slate-200/30 dark:border-slate-800/30 backdrop-blur-3xl px-5 flex-row items-center justify-between"
+        style={[headerStyle, { height: HEADER_TOTAL_HEIGHT, paddingTop: safeTop }, styles.headerContainer]}
       >
-        <View className="flex-row items-center gap-3">
-          <Animated.View style={[logoStyle, styles.logoShadow]}>
-            <View className="absolute inset-0 bg-emerald-500/20 dark:bg-emerald-500/10 blur-xl rounded-full scale-150" />
-            <Logo width={40} height={40} className="rounded-[14px]" />
-          </Animated.View>
-          <View>
-            <Text
-              className="font-black text-xl text-slate-900 dark:text-white tracking-tighter"
-              style={{ fontFamily: Fonts.rounded }}
-            >
-              Snaplinq
-            </Text>
-            <View className="flex-row items-center gap-1 -mt-1">
-              <View className="w-1 h-1 rounded-full bg-emerald-500" />
-              <Text className="text-[9px] uppercase font-black text-slate-500 dark:text-slate-400 tracking-[1.5px]">
-                Vault
+        {/* Glass background */}
+        <View style={StyleSheet.absoluteFill} className="bg-white/80 dark:bg-[#0f172a]/90" />
+        {/* Web backdrop blur */}
+        {Platform.OS === 'web' && (
+          <View style={[StyleSheet.absoluteFill, styles.webBlur]} />
+        )}
+
+        {/* Content row */}
+        <View style={styles.headerContent}>
+
+          {/* LEFT — Logo + Wordmark */}
+          <View style={styles.brandRow}>
+            <Animated.View style={[logoStyle, styles.logoShadow]}>
+              <View style={styles.logoGlow} />
+              <Logo width={40} height={40} className="rounded-[14px]" />
+            </Animated.View>
+            <View>
+              <Text
+                style={[styles.appName, { fontFamily: Fonts.rounded }]}
+                className="text-slate-900 dark:text-white"
+              >
+                Snaplinq
               </Text>
+              <View style={styles.vaultRow}>
+                <View style={styles.vaultDot} />
+                <Text style={styles.vaultText} className="text-slate-500 dark:text-slate-400">
+                  VAULT
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* RIGHT — Actions pill: Search + Three-dots */}
+          <View style={styles.actionsPill} className="bg-white/70 dark:bg-slate-800/70">
+            {/* Search */}
+            <Pressable
+              onPress={() => setShowSearch(true)}
+              style={({ pressed }) => [styles.actionBtn, pressed && styles.actionBtnPressed]}
+              hitSlop={6}
+            >
+              <Search size={19} color={isDark ? '#e2e8f0' : '#334155'} strokeWidth={2.5} />
+            </Pressable>
+
+            {/* Divider */}
+            <View style={styles.actionDivider} className="bg-slate-200 dark:bg-slate-600" />
+
+            {/* Three-dots menu */}
+            <View style={{ position: 'relative' }}>
+              <Pressable
+                onPress={() => setShowMenu(!showMenu)}
+                style={({ pressed }) => [styles.actionBtn, pressed && styles.actionBtnPressed]}
+                hitSlop={6}
+              >
+                <MoreVertical size={19} color={isDark ? '#e2e8f0' : '#334155'} strokeWidth={2.5} />
+              </Pressable>
+
+              {showMenu && (
+                <Animated.View
+                  entering={ZoomIn.duration(200)}
+                  exiting={FadeOut.duration(150)}
+                  style={[styles.menu, isDark ? styles.menuDark : styles.menuLight]}
+                >
+                  <Pressable
+                    onPress={() => {
+                      setShowMenu(false);
+                      setTimeout(() => router.push('/settings'), 100);
+                    }}
+                    style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
+                  >
+                    <Text style={styles.menuItemText} className="text-slate-800 dark:text-white">Settings</Text>
+                    <View style={styles.menuItemDot} />
+                  </Pressable>
+                  <Pressable
+                    onPress={() => { setShowMenu(false); toggleTheme(); }}
+                    style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
+                  >
+                    <Text style={styles.menuItemText} className="text-slate-800 dark:text-white">Theme</Text>
+                    <View style={[styles.menuItemDot, { backgroundColor: isDark ? '#fbbf24' : '#1e293b', width: 12, height: 12, borderRadius: 6 }]} />
+                  </Pressable>
+                  <Pressable
+                    onPress={() => { setShowMenu(false); signOut(); }}
+                    style={({ pressed }) => [styles.menuItemLast, pressed && styles.menuItemPressedDanger]}
+                  >
+                    <Text style={styles.menuItemDanger}>SIGN OUT</Text>
+                  </Pressable>
+                </Animated.View>
+              )}
             </View>
           </View>
         </View>
 
-        <View className="flex-row items-center gap-3">
-          <Pressable
-            onPress={() => setShowSearch(true)}
-            className="w-10 h-10 items-center justify-center rounded-[14px] bg-white/80 dark:bg-slate-800/80 border border-slate-200/50 dark:border-slate-700/50 shadow-sm active:scale-90 transition-all"
-          >
-            <Search size={20} color={isDark ? '#f1f5f9' : '#334155'} strokeWidth={2.5} />
-          </Pressable>
-
-          <View className="relative">
-            <Pressable
-              onPress={() => setShowMenu(!showMenu)}
-              className="w-10 h-10 items-center justify-center rounded-[14px] bg-white/80 dark:bg-slate-800/80 border border-slate-200/50 dark:border-slate-700/50 shadow-sm active:scale-90 transition-all"
-            >
-              <MoreVertical size={20} color={isDark ? '#f1f5f9' : '#334155'} strokeWidth={2.5} />
-            </Pressable>
-
-            {showMenu && (
-              <Animated.View
-                entering={ZoomIn.duration(200)}
-                exiting={FadeOut.duration(150)}
-                style={styles.menu}
-                className="absolute right-0 top-14 w-52 bg-white/90 dark:bg-slate-800/90 rounded-[24px] shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden z-50 backdrop-blur-xl"
-              >
-                <Pressable
-                  onPress={() => {
-                    setShowMenu(false);
-                    // Use setTimeout to allow the menu to close before navigating
-                    setTimeout(() => router.push('/settings'), 100);
-                  }}
-                  className="px-6 py-4 active:bg-slate-100 dark:active:bg-slate-700 border-b border-slate-50 dark:border-slate-700 flex-row items-center justify-between"
-                >
-                  <Text className="font-bold text-slate-800 dark:text-white">Settings</Text>
-                  <View className="w-1.5 h-1.5 rounded-full bg-slate-200" />
-                </Pressable>
-                <Pressable
-                  onPress={() => { setShowMenu(false); toggleTheme(); }}
-                  className="px-6 py-4 active:bg-slate-100 dark:active:bg-slate-700 border-b border-slate-50 dark:border-slate-700 flex-row items-center justify-between"
-                >
-                  <Text className="font-bold text-slate-800 dark:text-white">Theme</Text>
-                  <View className={`w-3 h-3 rounded-full ${isDark ? 'bg-amber-400' : 'bg-slate-800'}`} />
-                </Pressable>
-                <Pressable
-                  onPress={() => { setShowMenu(false); signOut(); }}
-                  className="px-6 py-5 active:bg-red-50 dark:active:bg-red-900/10"
-                >
-                  <Text className="font-black text-red-500 uppercase tracking-widest text-[11px]">Sign Out</Text>
-                </Pressable>
-              </Animated.View>
-            )}
-          </View>
-        </View>
+        {/* Emerald accent line at the very bottom of header */}
+        <LinearGradient
+          colors={['transparent', '#10b981', 'transparent']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.accentLine}
+        />
       </Animated.View>
 
       {/* Top Liquid Search Overlay */}
@@ -195,14 +219,14 @@ export default function Dashboard() {
       <LinkGrid
         searchQuery={debouncedSearch}
         onEdit={(link) => { setEditingLink(link); setShowAddModal(true); }}
-        contentContainerStyle={{ paddingTop: 110, paddingBottom: 150 }}
+        contentContainerStyle={{ paddingTop: HEADER_TOTAL_HEIGHT + 12, paddingBottom: 100 }}
         onScroll={scrollHandler}
       />
 
       {/* FAB */}
       <FloatingActionButton
         onPress={() => { setEditingLink(null); setShowAddModal(true); }}
-        style={{ bottom: 120 }}
+        style={{ bottom: 36 }}
       />
 
       {/* Add/Edit Modal */}
@@ -222,22 +246,177 @@ export default function Dashboard() {
 
 const styles = StyleSheet.create({
   headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 40,
+    justifyContent: 'flex-end', // push content to bottom of header
+    ...(Platform.OS === 'web' ? {
+      backdropFilter: 'blur(24px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+    } : {}),
+  } as any,
+  webBlur: {
+    ...(Platform.OS === 'web' ? {
+      backdropFilter: 'blur(24px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+    } : {}),
+  } as any,
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    height: 64,
+  },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   logoShadow: {
-    shadowColor: "#10b981",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
+    shadowColor: '#10b981',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
     elevation: 10,
   },
+  logoGlow: {
+    position: 'absolute',
+    inset: 0,
+    backgroundColor: 'rgba(16,185,129,0.2)',
+    borderRadius: 999,
+    transform: [{ scale: 1.5 }],
+  },
+  logoRadius: {
+    borderRadius: 14,
+  },
+  appName: {
+    fontSize: 20,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+    lineHeight: 22,
+  },
+  vaultRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: -1,
+  },
+  vaultDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#10b981',
+  },
+  vaultText: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+  },
+  // ── Actions pill ──────────────────────────────────
+  actionsPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(148,163,184,0.25)',
+    overflow: 'hidden',
+    ...(Platform.OS === 'web' ? {
+      backdropFilter: 'blur(16px)',
+      WebkitBackdropFilter: 'blur(16px)',
+    } : {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 8,
+      elevation: 4,
+    }),
+  } as any,
+  actionBtn: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionBtnPressed: {
+    opacity: 0.6,
+    transform: [{ scale: 0.88 }],
+  },
+  actionDivider: {
+    width: StyleSheet.hairlineWidth,
+    height: 20,
+  },
+  // ── Dropdown menu ─────────────────────────────────
   menu: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
+    position: 'absolute',
+    top: 50,
+    right: 0,
+    width: 200,
+    borderRadius: 20,
+    overflow: 'hidden',
+    zIndex: 100,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
     elevation: 20,
-  }
+  },
+  menuLight: {
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderWidth: 1,
+    borderColor: 'rgba(226,232,240,0.8)',
+  },
+  menuDark: {
+    backgroundColor: 'rgba(30,41,59,0.96)',
+    borderWidth: 1,
+    borderColor: 'rgba(51,65,85,0.8)',
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(148,163,184,0.2)',
+  },
+  menuItemLast: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  menuItemPressed: {
+    backgroundColor: 'rgba(148,163,184,0.1)',
+  },
+  menuItemPressedDanger: {
+    backgroundColor: 'rgba(239,68,68,0.06)',
+  },
+  menuItemText: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  menuItemDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#cbd5e1',
+  },
+  menuItemDanger: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: '#ef4444',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+  },
+  // ── Accent line ───────────────────────────────────
+  accentLine: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    opacity: 0.5,
+  },
 });
