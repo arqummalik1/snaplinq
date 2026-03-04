@@ -38,6 +38,6 @@ export const supabase = createClient(supabaseUrl!, supabaseAnonKey!, {
             } : ExpoSecureStoreAdapter,
         autoRefreshToken: true,
         persistSession: true,
-        detectSessionInUrl: false,
+        detectSessionInUrl: true, // Enable session detection from URL for Web OAuth
     },
 });

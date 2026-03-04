@@ -52,13 +52,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const signInWithGoogle = async () => {
         if (Platform.OS === 'web') {
             // WEB: OAuth Redirect
+            // Use window.location.origin but ensure it doesn't have trailing slash for Supabase matching
+            const origin = typeof window !== 'undefined' ? window.location.origin.replace(/\/$/, '') : '';
+            
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
+                    redirectTo: origin,
+                    skipBrowserRedirect: false,
                 },
             });
-            if (error) console.error("Google Signin Error:", error);
+            if (error) {
+                console.error("Google Signin Error:", error);
+                throw error;
+            }
         } else {
             // MOBILE: Native SDK
             try {
