@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Download } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { Platform, Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 
 export function PWAPrompt() {
@@ -82,40 +82,42 @@ export function PWAPrompt() {
     if (promptDisabled || !showPrompt) return null;
 
     return (
-        <Animated.View
-            entering={FadeInDown.springify().damping(15)}
-            exiting={FadeOutDown}
-            className="absolute bottom-6 left-4 right-4 sm:left-auto sm:right-6 sm:w-[400px] bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-2xl border border-slate-100 dark:border-slate-700 z-50 flex-row items-center gap-4"
-        >
-            <View className="bg-emerald-100 dark:bg-emerald-500/20 p-3 rounded-full">
-                <Download size={24} color="#10b981" />
-            </View>
-            <View className="flex-1">
-                <Text className="font-bold text-slate-900 dark:text-white mb-1">
-                    Install Snaplinq
-                </Text>
-                <Text className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-tight">
-                    {isIOS
-                        ? "Tap the Share icon below and select 'Add to Home Screen' to install."
-                        : "Install this app on your device for a better experience."}
-                </Text>
-            </View>
-            <View className="flex-col gap-2">
-                {!isIOS && (
-                    <Pressable
-                        onPress={handleInstall}
-                        className="bg-emerald-500 px-4 py-2 rounded-xl active:scale-95 transition-transform items-center"
-                    >
-                        <Text className="text-white font-bold text-sm">Install</Text>
-                    </Pressable>
-                )}
-                <Pressable
-                    onPress={handleDismiss}
-                    className="p-2 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-700 active:scale-95"
-                >
-                    <Text className="text-slate-500 dark:text-slate-300 font-bold text-sm">Dismiss</Text>
-                </Pressable>
-            </View>
-        </Animated.View>
+        <View style={StyleSheet.absoluteFill} pointerEvents="box-none" className="items-center justify-center p-6 z-50">
+            <Animated.View
+                entering={FadeInDown.springify().damping(15)}
+                exiting={FadeOutDown}
+                className="w-full max-w-[420px] bg-[#1C1C1E] rounded-[32px] p-6 shadow-2xl border border-[#2C2C2E] flex-row items-center gap-5"
+            >
+                <View className="bg-emerald-500/20 p-4 rounded-3xl">
+                    <Download size={28} color="#10b981" />
+                </View>
+                <View className="flex-1">
+                    <Text className="font-heavy text-white text-[18px] mb-1">
+                        Install Snaplinq
+                    </Text>
+                    <Text className="text-[14px] text-zinc-400 leading-snug">
+                        {isIOS
+                            ? "Tap Share and select 'Add to Home Screen' to install."
+                            : "Add to your device for a premium, local-first experience."}
+                    </Text>
+                    <View className="flex-row gap-3 mt-4">
+                        {!isIOS && (
+                            <Pressable
+                                onPress={handleInstall}
+                                className="bg-emerald-500 px-6 py-2.5 rounded-full items-center active:scale-95"
+                            >
+                                <Text className="text-white font-heavy text-sm">Install App</Text>
+                            </Pressable>
+                        )}
+                        <Pressable
+                            onPress={handleDismiss}
+                            className="bg-[#2C2C2E] px-6 py-2.5 rounded-full items-center active:scale-95"
+                        >
+                            <Text className="text-zinc-300 font-bold text-sm">Maybe Later</Text>
+                        </Pressable>
+                    </View>
+                </View>
+            </Animated.View>
+        </View>
     );
 }

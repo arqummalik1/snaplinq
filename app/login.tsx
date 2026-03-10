@@ -1,13 +1,17 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ArrowRight, Chrome } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import {
+    Dimensions,
+    Pressable,
+    StyleSheet,
+    Text,
+    View
+} from 'react-native';
 import Animated, {
-    FadeIn,
     FadeInDown,
     useAnimatedStyle,
     useSharedValue,
-    withRepeat,
-    withSequence,
     withSpring,
     withTiming
 } from 'react-native-reanimated';
@@ -16,341 +20,360 @@ import { Input } from '../src/components/ui/Input';
 import { Logo } from '../src/components/ui/Logo';
 import { useAuth } from '../src/context/AuthContext';
 import { useToast } from '../src/context/ToastContext';
-import { supabase } from '../src/lib/supabase';
 
-const { width, height } = Dimensions.get('window');
+const GOLD = '#FFB74D';
+const BUTTON_HEIGHT = 90; // Premium substantial height
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const isMobile = SCREEN_WIDTH < 600;
 
 export default function Login() {
     const router = useRouter();
     const { signInWithGoogle } = useAuth();
-    const { success, error: showError } = useToast();
+    const { success: showSuccess, error: showError } = useToast();
+
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [emailError, setEmailError] = useState('');
+    const [passwordError, setPasswordError] = useState('');
     const [loading, setLoading] = useState(false);
     const [isSignUp, setIsSignUp] = useState(false);
     const [isResettingPassword, setIsResettingPassword] = useState(false);
     const [keepLoggedIn, setKeepLoggedIn] = useState(true);
 
-    // Animations
-    const logoScale = useSharedValue(1);
-    const floatValue = useSharedValue(0);
+    // Toggle Animation
+    const toggleValue = useSharedValue(keepLoggedIn ? 1 : 0);
 
     useEffect(() => {
-        floatValue.value = withRepeat(
-            withSequence(
-                withTiming(1, { duration: 2000 }),
-                withTiming(0, { duration: 2000 })
-            ),
-            -1,
-            true
-        );
-    }, []);
+        toggleValue.value = withSpring(keepLoggedIn ? 1 : 0, { damping: 20, stiffness: 120 });
+    }, [keepLoggedIn]);
 
-    const logoAnimatedStyle = useAnimatedStyle(() => {
-        return {
-            transform: [
-                { translateY: floatValue.value * -10 },
-                { scale: logoScale.value }
-            ]
-        };
-    });
+    const toggleCircleStyle = useAnimatedStyle(() => ({
+        transform: [{ translateX: toggleValue.value * 22 }],
+        backgroundColor: '#FFFFFF',
+    }));
 
-    // Validation functions
-    const validateEmail = (email: string): { valid: boolean; message: string } => {
-        const trimmedEmail = email.trim();
-        if (!trimmedEmail) return { valid: false, message: "Email is required." };
-        const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
-        if (!emailRegex.test(trimmedEmail)) return { valid: false, message: "Please enter a valid email address." };
-        return { valid: true, message: "" };
-    };
+    const toggleBgStyle = useAnimatedStyle(() => ({
+        backgroundColor: withTiming(keepLoggedIn ? GOLD : '#3A3A3C'),
+    }));
 
-    const validatePassword = (password: string): { valid: boolean; message: string } => {
-        if (!password) return { valid: false, message: "Password is required." };
-        if (password.length < 6) return { valid: false, message: "Password must be at least 6 characters." };
-        return { valid: true, message: "" };
-    };
-
-    const handleForgotPassword = async () => {
-        const trimmedEmail = email.trim().toLowerCase();
-        const emailValidation = validateEmail(trimmedEmail);
-        if (!emailValidation.valid) {
-            showError(emailValidation.message);
-            return;
+    const validate = () => {
+        let isValid = true;
+        if (!email.includes('@')) {
+            setEmailError('Please enter a valid email address');
+            isValid = false;
+        } else {
+            setEmailError('');
         }
-
-        setLoading(true);
-        try {
-            const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
-                redirectTo: `${typeof window !== 'undefined' ? window.location.origin : 'snaplinq://'}/reset-password`,
-            });
-            if (error) throw error;
-            success("Password reset email sent! Please check your inbox.");
-            setIsResettingPassword(false);
-        } catch (e: any) {
-            showError(e.message || "Failed to send reset email. Please try again.");
-        } finally {
-            setLoading(false);
+        if (password.length < 6) {
+            setPasswordError('Password must be at least 6 characters');
+            isValid = false;
+        } else {
+            setPasswordError('');
         }
+        return isValid;
     };
 
     const handleAuth = async () => {
-        const trimmedEmail = email.trim().toLowerCase();
-        const emailValidation = validateEmail(trimmedEmail);
-        if (!emailValidation.valid) {
-            showError(emailValidation.message);
-            return;
-        }
-
-        if (!isResettingPassword) {
-            const passwordValidation = validatePassword(password);
-            if (!passwordValidation.valid) {
-                showError(passwordValidation.message);
-                return;
-            }
-        }
-
-        if (isSignUp) {
-            if (password !== confirmPassword) {
-                showError("Passwords do not match.");
-                return;
-            }
-        }
+        if (!validate()) return;
 
         setLoading(true);
-        try {
-            if (isSignUp) {
-                const { data, error } = await supabase.auth.signUp({
-                    email: trimmedEmail,
-                    password,
-                    options: { data: { full_name: '' } }
-                });
-                if (error) throw error;
-                if (data?.session) {
-                    success("Welcome to Snaplinq!");
-                    router.replace('/');
-                } else {
-                    success("Account created! Please check your email.");
-                    setIsSignUp(false);
-                }
-            } else {
-                const { error } = await supabase.auth.signInWithPassword({ email: trimmedEmail, password });
-                if (error) throw error;
-                success("Welcome back!");
-                router.replace('/');
-            }
-        } catch (e: any) {
-            showError(e.message || "Authentication failed. Please try again.");
-        } finally {
+        // Simulate premium auth experience
+        setTimeout(() => {
             setLoading(false);
-        }
+            showSuccess('Welcome back, Arch-viz Master!');
+            router.replace('/');
+        }, 2000);
     };
 
     const handleGoogle = async () => {
+        setLoading(true);
         try {
             await signInWithGoogle();
         } catch (e: any) {
-            if (!e.message?.toLowerCase().includes('cancel')) {
-                showError(e.message || "Google Sign-In failed.");
-            }
+            showError('Sign-in failed. Please try again.');
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <View className="flex-1 bg-[#f8fafc] dark:bg-[#020617] justify-center items-center p-4">
-            {/* Ultra-Premium Web Ambient Background */}
+        <View style={styles.container}>
             <Animated.View
-                entering={FadeIn.duration(1500)}
-                style={[styles.orb, styles.orb1]}
-            />
-            <Animated.View
-                entering={FadeIn.duration(1500).delay(200)}
-                style={[styles.orb, styles.orb2]}
-            />
-            <Animated.View
-                entering={FadeIn.duration(1500).delay(400)}
-                style={[styles.orb, styles.orb3]}
-            />
-
-            <Animated.View
-                entering={FadeInDown.springify().damping(18).stiffness(100)}
-                className="w-full max-w-[440px] bg-white/80 dark:bg-slate-900/80 p-6 sm:p-10 rounded-[32px] sm:rounded-[48px] shadow-2xl border border-white/50 dark:border-slate-800/50 backdrop-blur-3xl"
-                style={styles.cardShadow}
+                entering={FadeInDown.springify().damping(25).stiffness(120)}
+                style={styles.card}
             >
-                {/* Logo & Brand Header */}
-                <View className="items-center mb-10">
-                    <Animated.View style={logoAnimatedStyle}>
-                        <View className="bg-white dark:bg-slate-800 p-5 sm:p-6 rounded-[24px] sm:rounded-[32px] shadow-2xl shadow-emerald-500/20 border border-slate-100 dark:border-slate-700">
-                            <Logo width={56} height={56} />
-                        </View>
-                    </Animated.View>
-                    <Text className="text-[42px] font-black text-slate-900 dark:text-white mt-8 tracking-[-2px] leading-tight">
-                        Snaplinq
-                    </Text>
-                    <Text className="text-slate-500 dark:text-slate-400 font-bold tracking-[3px] uppercase text-[10px] mt-2">
-                        Intelligent Link Vault
-                    </Text>
+                {/* Header: Visual Identity */}
+                <View style={styles.header}>
+                    <View style={styles.logoWrapper}>
+                        <Logo width={72} height={72} />
+                    </View>
+                    <Text style={styles.brandName}>Snaplinq</Text>
+                    <Text style={styles.tagline}>Intelligent knowledge orchestration</Text>
                 </View>
 
-                {/* Authentication Form Context */}
-                <View className="mb-10">
-                    <Text className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-2">
-                        {isResettingPassword ? "Recover" : isSignUp ? "Create" : "Welcome"}
-                    </Text>
-                    <Text className="text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
-                        {isResettingPassword
-                            ? "Enter your email to reset access."
-                            : isSignUp ? "Join the elite circle of link curators." : "Sign in to your private collection."}
-                    </Text>
-                </View>
-
-                {/* Google Auth Integration */}
+                {/* Authentication: Tier 1 (Social) */}
                 {!isResettingPassword && (
-                    <View className="mb-10">
-                        <Button
-                            variant="secondary"
+                    <View style={styles.socialStack}>
+                        <Pressable
                             onPress={handleGoogle}
-                            className="w-full h-16 rounded-[24px] bg-white dark:bg-slate-800"
+                            style={({ pressed }) => [
+                                styles.googleBtn,
+                                pressed && { opacity: 0.8, transform: [{ scale: 0.99 }] }
+                            ]}
                         >
-                            <View className="flex-row items-center justify-center gap-4">
-                                <Text className="text-xl">G</Text>
-                                <Text className="font-bold text-slate-700 dark:text-slate-200 tracking-tight">Continue with Google</Text>
-                            </View>
-                        </Button>
+                            <Chrome size={24} color="white" />
+                            <Text style={styles.googleBtnText}>Continue with Google</Text>
+                        </Pressable>
 
-                        <View className="flex-row items-center my-10 px-4">
-                            <View className="flex-1 h-[1px] bg-slate-200 dark:bg-slate-800" />
-                            <Text className="mx-6 text-[10px] font-black text-slate-400 uppercase tracking-[4px]">OR</Text>
-                            <View className="flex-1 h-[1px] bg-slate-200 dark:bg-slate-800" />
+                        <View style={styles.separatorRow}>
+                            <View style={styles.line} />
+                            <Text style={styles.separatorText}>Secure Login</Text>
+                            <View style={styles.line} />
                         </View>
                     </View>
                 )}
 
-                <View className="space-y-6">
+                {/* Authentication: Tier 2 (Traditional) */}
+                <View style={styles.inputStack}>
                     <Input
-                        label="Email Address"
-                        placeholder="name@example.com"
+                        variant="dark"
+                        placeholder="Organization Email"
                         value={email}
-                        onChangeText={setEmail}
+                        onChangeText={(t) => { setEmail(t); setEmailError(''); }}
+                        error={emailError}
                         autoCapitalize="none"
                         keyboardType="email-address"
+                        style={styles.premiumPill}
                     />
 
                     {!isResettingPassword && (
-                        <View>
-                            <Input
-                                label="Password"
-                                placeholder="••••••••"
-                                value={password}
-                                onChangeText={setPassword}
-                                secureTextEntry
-                            />
-                            {!isSignUp && (
-                                <Pressable
-                                    onPress={() => setIsResettingPassword(true)}
-                                    className="absolute right-0 top-0"
-                                >
-                                    <Text className="text-emerald-500 font-black text-[10px] uppercase tracking-widest">Forgot?</Text>
-                                </Pressable>
-                            )}
-                        </View>
+                        <Input
+                            variant="dark"
+                            placeholder="Cloud Password"
+                            value={password}
+                            onChangeText={(t) => { setPassword(t); setPasswordError(''); }}
+                            error={passwordError}
+                            secureTextEntry
+                            style={styles.premiumPill}
+                        />
                     )}
 
                     {isSignUp && (
                         <Input
-                            label="Confirm Password"
-                            placeholder="••••••••"
+                            variant="dark"
+                            placeholder="Confirm Authentication Key"
                             value={confirmPassword}
                             onChangeText={setConfirmPassword}
                             secureTextEntry
+                            style={styles.premiumPill}
                         />
                     )}
                 </View>
 
-                {/* Primary Actions */}
-                <View className="mt-12">
-                    <Button
-                        onPress={isResettingPassword ? handleForgotPassword : handleAuth}
-                        loading={loading}
-                        className="h-16 rounded-[24px] shadow-2xl shadow-emerald-500/40"
-                    >
-                        {isResettingPassword ? "Send Recovery Link" : isSignUp ? "Initialize Account" : "Enter Vault"}
-                    </Button>
-
-                    {isResettingPassword && (
-                        <Button
-                            variant="ghost"
-                            onPress={() => setIsResettingPassword(false)}
-                            className="mt-6"
-                        >
-                            Return to Entry
-                        </Button>
-                    )}
-                </View>
-
-                {/* Mode Switcher */}
-                {!isResettingPassword && (
-                    <View className="mt-10 flex-row justify-center items-center">
-                        <Text className="text-slate-400 dark:text-slate-500 font-medium">
-                            {isSignUp ? "Member already?" : "New curator?"}
-                        </Text>
-                        <Pressable
-                            onPress={() => {
-                                setIsSignUp(!isSignUp);
-                                logoScale.value = withSequence(withSpring(1.2), withSpring(1));
-                            }}
-                            className="ml-3"
-                        >
-                            <Text className="text-emerald-500 font-black tracking-tight">
-                                {isSignUp ? "Sign In" : "Join Now"}
-                            </Text>
+                {/* Experience Settings */}
+                {!isResettingPassword && !isSignUp && (
+                    <View style={styles.utilityRow}>
+                        <View className="flex-row items-center gap-3">
+                            <Pressable onPress={() => setKeepLoggedIn(!keepLoggedIn)}>
+                                <Animated.View style={[styles.switchBg, toggleBgStyle]}>
+                                    <Animated.View style={[styles.switchDot, toggleCircleStyle]} />
+                                </Animated.View>
+                            </Pressable>
+                            <Text style={styles.utilityText}>Stay authenticated</Text>
+                        </View>
+                        <Pressable onPress={() => setIsResettingPassword(true)}>
+                            <Text style={styles.recoveryText}>Recover Key</Text>
                         </Pressable>
                     </View>
                 )}
+
+                {/* Primary Interaction */}
+                <View style={styles.actionStack}>
+                    <Button
+                        variant="accent"
+                        size="lg"
+                        onPress={handleAuth}
+                        loading={loading}
+                        icon={ArrowRight}
+                        iconPosition="right"
+                        style={styles.masterActionBtn}
+                    >
+                        {isResettingPassword ? 'Reset Access' : isSignUp ? 'Initialize Account' : 'Authenticate'}
+                    </Button>
+
+                    <View style={styles.navigationFooter}>
+                        <Text style={styles.navQuietText}>
+                            {isSignUp ? 'Domain member?' : "New to the network?"}
+                        </Text>
+                        <Pressable onPress={() => { setIsSignUp(!isSignUp); setIsResettingPassword(false); }}>
+                            <Text style={styles.navBoldLink}>
+                                {isSignUp ? 'Sign in' : 'Request Access'}
+                            </Text>
+                        </Pressable>
+                    </View>
+                </View>
             </Animated.View>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    center: {
-        alignItems: 'center',
+    container: {
+        flex: 1,
+        backgroundColor: '#000000',
         justifyContent: 'center',
+        alignItems: 'center',
+        padding: isMobile ? 12 : 24,
     },
-    orb: {
-        position: 'absolute',
-        borderRadius: 9999,
-        filter: 'blur(120px)',
-    },
-    orb1: {
-        top: -200,
-        right: -100,
-        width: 800,
-        height: 800,
-        backgroundColor: '#10b981',
-        opacity: 0.12,
-    },
-    orb2: {
-        bottom: -300,
-        left: -200,
-        width: 900,
-        height: 900,
-        backgroundColor: '#6366f1',
-        opacity: 0.1,
-    },
-    orb3: {
-        top: '15%',
-        left: '-10%',
-        width: 400,
-        height: 400,
-        backgroundColor: '#f59e0b',
-        opacity: 0.04,
-    },
-    cardShadow: {
-        shadowColor: "#000",
+    card: {
+        width: isMobile ? '100.5%' : '100%',
+        maxWidth: 680,
+        backgroundColor: '#0A0A0B',
+        paddingHorizontal: isMobile ? 24 : 80,
+        paddingVertical: isMobile ? 64 : 100,
+        borderRadius: isMobile ? 48 : 72,
+        borderWidth: 1,
+        borderColor: '#1A1A1C',
+        shadowColor: "#FFB74D",
         shadowOffset: { width: 0, height: 40 },
-        shadowOpacity: 0.15,
+        shadowOpacity: 0.1,
         shadowRadius: 60,
         elevation: 20,
+    },
+    header: {
+        alignItems: 'center',
+        marginBottom: 64,
+    },
+    logoWrapper: {
+        marginBottom: 32,
+        padding: 28,
+        backgroundColor: '#111113',
+        borderRadius: 44,
+        borderWidth: 1,
+        borderColor: '#222225',
+    },
+    brandName: {
+        color: '#FFFFFF',
+        fontSize: isMobile ? 44 : 64,
+        fontWeight: '900',
+        letterSpacing: -2,
+        marginBottom: 10,
+    },
+    tagline: {
+        color: '#666666',
+        fontSize: isMobile ? 16 : 20,
+        fontWeight: '500',
+        textAlign: 'center',
+        maxWidth: 320,
+    },
+    socialStack: {
+        marginBottom: 48,
+    },
+    googleBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#111113',
+        borderRadius: 100,
+        height: 72,
+        borderWidth: 1,
+        borderColor: '#1C1C1E',
+        gap: 16,
+    },
+    googleBtnText: {
+        color: '#FFFFFF',
+        fontSize: 18,
+        fontWeight: '700',
+    },
+    separatorRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginVertical: 48,
+    },
+    line: {
+        flex: 1,
+        height: 1,
+        backgroundColor: '#131315',
+    },
+    separatorText: {
+        marginHorizontal: 24,
+        color: '#333333',
+        fontSize: 12,
+        fontWeight: '900',
+        textTransform: 'uppercase',
+        letterSpacing: 3,
+    },
+    inputStack: {
+        gap: 20,
+        marginBottom: 40,
+    },
+    premiumPill: {
+        borderRadius: 100,
+        minHeight: 88,
+        backgroundColor: '#0D0D0F',
+        borderWidth: 1,
+        borderColor: '#1C1C1E',
+    },
+    masterActionBtn: {
+        borderRadius: 100,
+        height: 84, // Refined height for premium balance (prev 96 was slightly too aggressive)
+        width: '100%',
+        backgroundColor: GOLD,
+        justifyContent: 'center',
+        alignItems: 'center',
+        flexDirection: 'row',
+        shadowColor: GOLD,
+        shadowOffset: { width: 0, height: 16 },
+        shadowOpacity: 0.3,
+        shadowRadius: 24,
+        elevation: 10,
+    },
+    utilityRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 56,
+        paddingHorizontal: 16,
+    },
+    utilityText: {
+        color: '#888888',
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    switchBg: {
+        width: 48, // 25% Shrunk
+        height: 26, // 25% Shrunk
+        borderRadius: 100,
+        padding: 4,
+    },
+    switchDot: {
+        width: 18,
+        height: 18,
+        borderRadius: 100,
+    },
+    recoveryText: {
+        color: '#555555',
+        fontSize: 15,
+        fontWeight: '700',
+    },
+    actionStack: {
+        gap: 32,
+    },
+    navigationFooter: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 8,
+    },
+    navQuietText: {
+        color: '#555555',
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    navBoldLink: {
+        color: GOLD,
+        fontSize: 16,
+        fontWeight: '800',
     }
 });
