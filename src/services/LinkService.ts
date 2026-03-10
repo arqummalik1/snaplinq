@@ -14,17 +14,36 @@ export class LinkService {
     }
 
     static async insertLink(payload: NewLink & { user_id: string }): Promise<Link> {
+        console.log('=== LinkService DEBUG ===');
+        console.log('Payload URL:', payload.url);
+        console.log('Payload Title:', payload.title);
+        console.log('Payload Category:', payload.category);
+        console.log('Payload UserID:', payload.user_id);
+
+        const insertData = {
+            url: payload.url,
+            title: payload.title,
+            category: payload.category || 'Uncategorized',
+            icon: payload.icon || '',
+            user_id: payload.user_id,
+            created_at: new Date().toISOString(),
+            visited: false,
+        };
+
+        console.log('Insert data:', JSON.stringify(insertData));
+
         const { data, error } = await supabase
             .from('links')
-            .insert({
-                ...payload,
-                created_at: new Date().toISOString(),
-                visited: false,
-            })
+            .insert(insertData)
             .select()
             .single();
 
-        if (error) throw error;
+        if (error) {
+            console.error('=== SUPABASE ERROR ===');
+            console.error('Error:', error);
+            throw error;
+        }
+
         return data;
     }
 

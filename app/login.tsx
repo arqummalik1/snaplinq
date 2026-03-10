@@ -1,30 +1,50 @@
 import { useRouter } from 'expo-router';
-import { ArrowRight, Chrome } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import { ArrowRight } from 'lucide-react-native';
+import React, { useState } from 'react';
 import {
     Dimensions,
+    Image,
+    KeyboardAvoidingView,
+    Platform,
     Pressable,
+    StatusBar,
     StyleSheet,
     Text,
+    TextStyle,
     View
 } from 'react-native';
 import Animated, {
+    FadeIn,
     FadeInDown,
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
-    withTiming
+    FadeInUp,
 } from 'react-native-reanimated';
 import { Button } from '../src/components/ui/Button';
 import { Input } from '../src/components/ui/Input';
 import { Logo } from '../src/components/ui/Logo';
 import { useAuth } from '../src/context/AuthContext';
 import { useToast } from '../src/context/ToastContext';
+import { supabase } from '../src/lib/supabase';
 
-const GOLD = '#FFB74D';
-const BUTTON_HEIGHT = 90; // Premium substantial height
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const isMobile = SCREEN_WIDTH < 600;
+const isSmallHeight = SCREEN_HEIGHT < 700;
+
+// Premium color palette
+const COLORS = {
+    background: '#0A0A0B',
+    card: '#111113',
+    cardBorder: '#1C1C1E',
+    primary: '#10B981',
+    primaryGlow: 'rgba(16, 185, 129, 0.3)',
+    text: '#FFFFFF',
+    textSecondary: '#71717A',
+    textMuted: '#52525B',
+    googleBg: '#18181B',
+    googleBorder: '#27272A',
+    inputBg: '#09090B',
+    inputBorder: '#18181B',
+    error: '#EF4444',
+} as const;
 
 export default function Login() {
     const router = useRouter();
@@ -38,29 +58,11 @@ export default function Login() {
     const [passwordError, setPasswordError] = useState('');
     const [loading, setLoading] = useState(false);
     const [isSignUp, setIsSignUp] = useState(false);
-    const [isResettingPassword, setIsResettingPassword] = useState(false);
-    const [keepLoggedIn, setKeepLoggedIn] = useState(true);
-
-    // Toggle Animation
-    const toggleValue = useSharedValue(keepLoggedIn ? 1 : 0);
-
-    useEffect(() => {
-        toggleValue.value = withSpring(keepLoggedIn ? 1 : 0, { damping: 20, stiffness: 120 });
-    }, [keepLoggedIn]);
-
-    const toggleCircleStyle = useAnimatedStyle(() => ({
-        transform: [{ translateX: toggleValue.value * 22 }],
-        backgroundColor: '#FFFFFF',
-    }));
-
-    const toggleBgStyle = useAnimatedStyle(() => ({
-        backgroundColor: withTiming(keepLoggedIn ? GOLD : '#3A3A3C'),
-    }));
 
     const validate = () => {
         let isValid = true;
         if (!email.includes('@')) {
-            setEmailError('Please enter a valid email address');
+            setEmailError('Please enter a valid email');
             isValid = false;
         } else {
             setEmailError('');
@@ -77,13 +79,34 @@ export default function Login() {
     const handleAuth = async () => {
         if (!validate()) return;
 
+        if (isSignUp && password !== confirmPassword) {
+            showError("Passwords do not match");
+            return;
+        }
+
         setLoading(true);
-        // Simulate premium auth experience
-        setTimeout(() => {
+        try {
+            if (isSignUp) {
+                const { error: signUpError } = await supabase.auth.signUp({
+                    email,
+                    password,
+                });
+                if (signUpError) throw signUpError;
+                showSuccess('Account initialized! Please check your email.');
+            } else {
+                const { error: signInError } = await supabase.auth.signInWithPassword({
+                    email,
+                    password,
+                });
+                if (signInError) throw signInError;
+                showSuccess('Welcome back!');
+                router.replace('/');
+            }
+        } catch (e: any) {
+            showError(e.message || 'Authentication failed');
+        } finally {
             setLoading(false);
-            showSuccess('Welcome back, Arch-viz Master!');
-            router.replace('/');
-        }, 2000);
+        }
     };
 
     const handleGoogle = async () => {
@@ -97,123 +120,159 @@ export default function Login() {
         }
     };
 
+    const toggleMode = () => {
+        setIsSignUp(!isSignUp);
+        setEmailError('');
+        setPasswordError('');
+    };
+
     return (
         <View style={styles.container}>
-            <Animated.View
-                entering={FadeInDown.springify().damping(25).stiffness(120)}
-                style={styles.card}
-            >
-                {/* Header: Visual Identity */}
-                <View style={styles.header}>
-                    <View style={styles.logoWrapper}>
-                        <Logo width={72} height={72} />
-                    </View>
-                    <Text style={styles.brandName}>Snaplinq</Text>
-                    <Text style={styles.tagline}>Intelligent knowledge orchestration</Text>
-                </View>
+            <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
 
-                {/* Authentication: Tier 1 (Social) */}
-                {!isResettingPassword && (
-                    <View style={styles.socialStack}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={styles.keyboardView}
+            >
+                <Animated.View
+                    entering={FadeIn.duration(800)}
+                    style={styles.contentContainer}
+                >
+                    {/* Logo Section */}
+                    <Animated.View
+                        entering={FadeInDown.springify().damping(20).delay(100)}
+                        style={styles.logoSection}
+                    >
+                        <View style={styles.logoContainer}>
+                            <View style={styles.logoGlow}>
+                                <Logo width={isMobile ? 56 : 72} height={isMobile ? 56 : 72} />
+                            </View>
+                        </View>
+                        <Text style={styles.brandName}>Snaplinq</Text>
+                        <Text style={styles.tagline}>Your intelligent link vault</Text>
+                    </Animated.View>
+
+                    {/* Form Card */}
+                    <Animated.View
+                        entering={FadeInUp.springify().damping(20).delay(200)}
+                        style={styles.formCard}
+                    >
+                        {/* Google Sign In - Premium Style */}
                         <Pressable
                             onPress={handleGoogle}
                             style={({ pressed }) => [
-                                styles.googleBtn,
-                                pressed && { opacity: 0.8, transform: [{ scale: 0.99 }] }
+                                styles.googleButton,
+                                pressed && styles.googleButtonPressed
                             ]}
                         >
-                            <Chrome size={24} color="white" />
-                            <Text style={styles.googleBtnText}>Continue with Google</Text>
+                            <View style={styles.googleIconContainer}>
+                                <Image
+                                    source={require('../assets/logo/google.png')}
+                                    style={{ width: 18, height: 18 }} // 25% smaller brand presence in button
+                                    resizeMode="contain"
+                                />
+                            </View>
+                            <Text style={styles.googleButtonText}>Continue with Google</Text>
                         </Pressable>
 
-                        <View style={styles.separatorRow}>
-                            <View style={styles.line} />
-                            <Text style={styles.separatorText}>Secure Login</Text>
-                            <View style={styles.line} />
+                        {/* Divider */}
+                        <View style={styles.divider}>
+                            <View style={styles.dividerLine} />
+                            <Text style={styles.dividerText}>or</Text>
+                            <View style={styles.dividerLine} />
                         </View>
-                    </View>
-                )}
 
-                {/* Authentication: Tier 2 (Traditional) */}
-                <View style={styles.inputStack}>
-                    <Input
-                        variant="dark"
-                        placeholder="Organization Email"
-                        value={email}
-                        onChangeText={(t) => { setEmail(t); setEmailError(''); }}
-                        error={emailError}
-                        autoCapitalize="none"
-                        keyboardType="email-address"
-                        style={styles.premiumPill}
-                    />
+                        {/* Input Fields */}
+                        <View style={styles.inputContainer}>
+                            <Input
+                                variant="dark"
+                                placeholder="Email address"
+                                value={email}
+                                onChangeText={(t) => { setEmail(t); setEmailError(''); }}
+                                error={emailError}
+                                autoCapitalize="none"
+                                keyboardType="email-address"
+                                className="text-base"
+                                style={styles.input}
+                            />
 
-                    {!isResettingPassword && (
-                        <Input
-                            variant="dark"
-                            placeholder="Cloud Password"
-                            value={password}
-                            onChangeText={(t) => { setPassword(t); setPasswordError(''); }}
-                            error={passwordError}
-                            secureTextEntry
-                            style={styles.premiumPill}
-                        />
-                    )}
+                            <Input
+                                variant="dark"
+                                placeholder="Password"
+                                value={password}
+                                onChangeText={(t) => { setPassword(t); setPasswordError(''); }}
+                                error={passwordError}
+                                secureTextEntry
+                                className="text-base"
+                                style={styles.input}
+                            />
 
-                    {isSignUp && (
-                        <Input
-                            variant="dark"
-                            placeholder="Confirm Authentication Key"
-                            value={confirmPassword}
-                            onChangeText={setConfirmPassword}
-                            secureTextEntry
-                            style={styles.premiumPill}
-                        />
-                    )}
-                </View>
-
-                {/* Experience Settings */}
-                {!isResettingPassword && !isSignUp && (
-                    <View style={styles.utilityRow}>
-                        <View className="flex-row items-center gap-3">
-                            <Pressable onPress={() => setKeepLoggedIn(!keepLoggedIn)}>
-                                <Animated.View style={[styles.switchBg, toggleBgStyle]}>
-                                    <Animated.View style={[styles.switchDot, toggleCircleStyle]} />
+                            {isSignUp && (
+                                <Animated.View entering={FadeIn.duration(200)}>
+                                    <Input
+                                        variant="dark"
+                                        placeholder="Confirm password"
+                                        value={confirmPassword}
+                                        onChangeText={setConfirmPassword}
+                                        secureTextEntry
+                                        className="text-base"
+                                        style={styles.input}
+                                    />
                                 </Animated.View>
-                            </Pressable>
-                            <Text style={styles.utilityText}>Stay authenticated</Text>
+                            )}
+
+                            {!isSignUp && (
+                                <View style={styles.rememberMeRow}>
+                                    <View style={styles.rememberMeLeft}>
+                                        <Pressable style={styles.checkboxSmall}>
+                                            <View style={styles.checkboxInner} />
+                                        </Pressable>
+                                        <Text style={styles.rememberMeText}>Keep me signed in</Text>
+                                    </View>
+                                    <Pressable onPress={() => router.push('/reset-password')}>
+                                        <Text style={styles.forgotPassword}>Forgot?</Text>
+                                    </Pressable>
+                                </View>
+                            )}
                         </View>
-                        <Pressable onPress={() => setIsResettingPassword(true)}>
-                            <Text style={styles.recoveryText}>Recover Key</Text>
-                        </Pressable>
-                    </View>
-                )}
 
-                {/* Primary Interaction */}
-                <View style={styles.actionStack}>
-                    <Button
-                        variant="accent"
-                        size="lg"
-                        onPress={handleAuth}
-                        loading={loading}
-                        icon={ArrowRight}
-                        iconPosition="right"
-                        style={styles.masterActionBtn}
-                    >
-                        {isResettingPassword ? 'Reset Access' : isSignUp ? 'Initialize Account' : 'Authenticate'}
-                    </Button>
+                        {/* Action Button */}
+                        <Button
+                            variant="substantial"
+                            size="xl"
+                            onPress={handleAuth}
+                            loading={loading}
+                            icon={ArrowRight}
+                            iconPosition="right"
+                            className="w-full"
+                        >
+                            {isSignUp ? 'Create Account' : 'Sign In'}
+                        </Button>
+                    </Animated.View>
 
-                    <View style={styles.navigationFooter}>
-                        <Text style={styles.navQuietText}>
-                            {isSignUp ? 'Domain member?' : "New to the network?"}
+                    {/* Toggle Mode */}
+                    <View style={styles.toggleContainer}>
+                        <Text style={styles.toggleText}>
+                            {isSignUp ? 'Already have an account?' : "Don't have an account?"}
                         </Text>
-                        <Pressable onPress={() => { setIsSignUp(!isSignUp); setIsResettingPassword(false); }}>
-                            <Text style={styles.navBoldLink}>
-                                {isSignUp ? 'Sign in' : 'Request Access'}
+                        <Pressable onPress={toggleMode}>
+                            <Text style={styles.toggleLink}>
+                                {isSignUp ? 'Sign in' : 'Sign up'}
                             </Text>
                         </Pressable>
                     </View>
-                </View>
-            </Animated.View>
+
+                    {/* Footer */}
+                    <Animated.View
+                        entering={FadeIn.delay(400)}
+                        style={styles.footer}
+                    >
+                        <Text style={styles.footerText}>
+                            By continuing, you agree to our Terms
+                        </Text>
+                    </Animated.View>
+                </Animated.View>
+            </KeyboardAvoidingView>
         </View>
     );
 }
@@ -221,159 +280,192 @@ export default function Login() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#000000',
+        backgroundColor: COLORS.background,
+    },
+    keyboardView: {
+        flex: 1,
+    },
+    contentContainer: {
+        flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: isMobile ? 12 : 24,
+        paddingHorizontal: Math.max(SCREEN_WIDTH * 0.05, 16), // Fluid padding
+        paddingVertical: 24,
     },
-    card: {
-        width: isMobile ? '100.5%' : '100%',
-        maxWidth: 680,
-        backgroundColor: '#0A0A0B',
-        paddingHorizontal: isMobile ? 24 : 80,
-        paddingVertical: isMobile ? 64 : 100,
-        borderRadius: isMobile ? 48 : 72,
-        borderWidth: 1,
-        borderColor: '#1A1A1C',
-        shadowColor: "#FFB74D",
-        shadowOffset: { width: 0, height: 40 },
-        shadowOpacity: 0.1,
-        shadowRadius: 60,
-        elevation: 20,
-    },
-    header: {
+    logoSection: {
         alignItems: 'center',
-        marginBottom: 64,
+        marginBottom: Math.max(SCREEN_HEIGHT * 0.04, 24), // Relative margin
     },
-    logoWrapper: {
-        marginBottom: 32,
-        padding: 28,
-        backgroundColor: '#111113',
-        borderRadius: 44,
+    logoContainer: {
+        marginBottom: 16,
+    },
+    logoGlow: {
+        padding: 20,
+        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+        borderRadius: 32,
         borderWidth: 1,
-        borderColor: '#222225',
+        borderColor: 'rgba(16, 185, 129, 0.2)',
+        shadowColor: COLORS.primary,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.5,
+        shadowRadius: 24,
     },
     brandName: {
-        color: '#FFFFFF',
-        fontSize: isMobile ? 44 : 64,
-        fontWeight: '900',
-        letterSpacing: -2,
-        marginBottom: 10,
+        color: COLORS.text,
+        fontSize: isMobile ? 32 : 40,
+        fontWeight: '800',
+        letterSpacing: -1,
+        marginBottom: 4,
     },
     tagline: {
-        color: '#666666',
-        fontSize: isMobile ? 16 : 20,
+        color: COLORS.textSecondary,
+        fontSize: isMobile ? 14 : 16,
         fontWeight: '500',
-        textAlign: 'center',
-        maxWidth: 320,
     },
-    socialStack: {
-        marginBottom: 48,
+    formCard: {
+        width: '100%',
+        maxWidth: 380, // Always constrain to mobile-like width
+        backgroundColor: COLORS.card,
+        borderRadius: 24,
+        borderWidth: 1,
+        borderColor: COLORS.cardBorder,
+        padding: 24,
+        ...(Platform.OS === 'web' ? {
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+        } : {
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 25 },
+            shadowOpacity: 0.5,
+            shadowRadius: 50,
+            elevation: 20,
+        }),
     },
-    googleBtn: {
+    googleButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#111113',
-        borderRadius: 100,
-        height: 72,
+        backgroundColor: COLORS.googleBg,
+        borderRadius: 16,
+        height: 56,
         borderWidth: 1,
-        borderColor: '#1C1C1E',
-        gap: 16,
+        borderColor: COLORS.googleBorder,
+        gap: 12,
     },
-    googleBtnText: {
-        color: '#FFFFFF',
-        fontSize: 18,
-        fontWeight: '700',
+    googleButtonPressed: {
+        opacity: 0.8,
+        transform: [{ scale: 0.98 }],
     },
-    separatorRow: {
+    googleIconContainer: {
+        width: 24,
+        height: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    googleButtonText: {
+        color: COLORS.text,
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    divider: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginVertical: 48,
+        marginVertical: 24,
     },
-    line: {
+    dividerLine: {
         flex: 1,
         height: 1,
-        backgroundColor: '#131315',
+        backgroundColor: COLORS.cardBorder,
     },
-    separatorText: {
-        marginHorizontal: 24,
-        color: '#333333',
+    dividerText: {
+        color: COLORS.textMuted,
         fontSize: 12,
-        fontWeight: '900',
+        fontWeight: '600',
+        marginHorizontal: 16,
         textTransform: 'uppercase',
-        letterSpacing: 3,
+        letterSpacing: 1,
     },
-    inputStack: {
-        gap: 20,
-        marginBottom: 40,
+    inputContainer: {
+        marginBottom: 20,
     },
-    premiumPill: {
-        borderRadius: 100,
-        minHeight: 88,
-        backgroundColor: '#0D0D0F',
+    input: {
+        backgroundColor: COLORS.inputBg,
+        borderRadius: 16,
         borderWidth: 1,
-        borderColor: '#1C1C1E',
+        borderColor: COLORS.inputBorder,
+        minHeight: 56,
     },
-    masterActionBtn: {
-        borderRadius: 100,
-        height: 84, // Refined height for premium balance (prev 96 was slightly too aggressive)
-        width: '100%',
-        backgroundColor: GOLD,
-        justifyContent: 'center',
+    actionButton: {
+        borderRadius: 16,
+        height: 56,
+        backgroundColor: COLORS.primary,
+        shadowColor: COLORS.primary,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.4,
+        shadowRadius: 16,
+        elevation: 8,
+    },
+    rememberMeRow: {
+        flexDirection: 'row',
         alignItems: 'center',
-        flexDirection: 'row',
-        shadowColor: GOLD,
-        shadowOffset: { width: 0, height: 16 },
-        shadowOpacity: 0.3,
-        shadowRadius: 24,
-        elevation: 10,
-    },
-    utilityRow: {
-        flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 56,
-        paddingHorizontal: 16,
+        marginTop: -8,
+        marginBottom: 12,
+        paddingHorizontal: 4,
     },
-    utilityText: {
-        color: '#888888',
-        fontSize: 16,
-        fontWeight: '500',
-    },
-    switchBg: {
-        width: 48, // 25% Shrunk
-        height: 26, // 25% Shrunk
-        borderRadius: 100,
-        padding: 4,
-    },
-    switchDot: {
-        width: 18,
-        height: 18,
-        borderRadius: 100,
-    },
-    recoveryText: {
-        color: '#555555',
-        fontSize: 15,
-        fontWeight: '700',
-    },
-    actionStack: {
-        gap: 32,
-    },
-    navigationFooter: {
+    rememberMeLeft: {
         flexDirection: 'row',
-        justifyContent: 'center',
         alignItems: 'center',
         gap: 8,
     },
-    navQuietText: {
-        color: '#555555',
-        fontSize: 16,
+    checkboxSmall: {
+        width: 14, // 25% smaller
+        height: 14,
+        borderRadius: 4,
+        borderWidth: 1,
+        borderColor: COLORS.textMuted,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    checkboxInner: {
+        width: 8,
+        height: 8,
+        borderRadius: 2,
+        backgroundColor: COLORS.primary,
+    },
+    rememberMeText: {
+        fontSize: 11,
+        color: COLORS.textSecondary,
         fontWeight: '500',
     },
-    navBoldLink: {
-        color: GOLD,
-        fontSize: 16,
-        fontWeight: '800',
-    }
+    forgotPassword: {
+        fontSize: 12,
+        color: COLORS.primary,
+        fontWeight: '600',
+    },
+    toggleContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 24,
+        gap: 6,
+    },
+    toggleText: {
+        color: COLORS.textSecondary,
+        fontSize: 14,
+        fontWeight: '500',
+    } as TextStyle,
+    toggleLink: {
+        color: COLORS.primary,
+        fontSize: 14,
+        fontWeight: '700',
+    } as TextStyle,
+    footer: {
+        marginTop: 24,
+        alignItems: 'center',
+    },
+    footerText: {
+        color: COLORS.textMuted,
+        fontSize: 12,
+        fontWeight: '500',
+    } as TextStyle,
 });

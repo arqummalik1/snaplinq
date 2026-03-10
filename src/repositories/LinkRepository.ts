@@ -12,15 +12,31 @@ export class LinkRepository {
     }
 
     static async add(link: NewLink, userId: string): Promise<Link> {
-        // Basic validation
-        if (!link.url || !link.url.includes('.')) {
-            throw new Error('Invalid URL provided.');
+        // Improved validation - accept more URL formats
+        if (!link.url || link.url.trim() === '') {
+            throw new Error('URL is required');
+        }
+
+        // Check for valid URL patterns (more flexible)
+        const urlPattern = /^(https?:\/\/)?([\w.-]+)(:[0-9]+)?(\/.*)?$/i;
+        if (!urlPattern.test(link.url.trim())) {
+            throw new Error('Please enter a valid URL (e.g., example.com or localhost:3000)');
         }
 
         try {
             return await LinkService.insertLink({ ...link, user_id: userId });
         } catch (error) {
             console.error('LinkRepository.add failed:', error);
+            // Provide more specific error messages
+            if (error instanceof Error) {
+                if (error.message.includes('network') || error.message.includes('fetch')) {
+                    throw new Error('Network error. Please check your connection and try again.');
+                }
+                if (error.message.includes('duplicate') || error.message.includes('unique')) {
+                    throw new Error('This link already exists in your vault.');
+                }
+                throw error;
+            }
             throw new Error('Failed to add link. Please check your connection.');
         }
     }

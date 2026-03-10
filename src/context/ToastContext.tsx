@@ -50,7 +50,7 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
     return (
         <ToastContext.Provider value={{ showToast, success, error, info }}>
             {children}
-            <View style={{ position: 'absolute', top: 50, left: 0, right: 0, zIndex: 100, alignItems: 'center' }} pointerEvents="box-none">
+            <View style={{ position: 'absolute', top: 60, left: 0, right: 0, zIndex: 1000, alignItems: 'center', pointerEvents: 'box-none' }}>
                 {toasts.map((toast) => (
                     <Toast
                         key={toast.id}

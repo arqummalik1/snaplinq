@@ -8,7 +8,7 @@ interface ButtonProps {
     onPress: () => void;
     children: React.ReactNode;
     variant?: 'primary' | 'secondary' | 'accent' | 'ghost' | 'danger';
-    size?: 'sm' | 'md' | 'lg';
+    size?: 'sm' | 'md' | 'lg' | 'xl';
     disabled?: boolean;
     loading?: boolean;
     className?: string;
@@ -17,6 +17,7 @@ interface ButtonProps {
     accessibilityLabel?: string;
     accessibilityHint?: string;
     style?: any;
+    fluid?: boolean;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -63,23 +64,26 @@ export const Button = ({
     const variants = {
         primary: 'bg-emerald-500 shadow-lg shadow-emerald-500/30',
         secondary: 'bg-zinc-800 border border-zinc-700 shadow-sm',
-        accent: 'shadow-xl shadow-gold-500/20',
+        accent: 'bg-emerald-500 shadow-lg shadow-emerald-500/30',
+        substantial: 'bg-emerald-500 shadow-2xl shadow-emerald-500/40', // Premium feel
         ghost: 'bg-transparent',
         danger: 'bg-red-500/10 border border-red-500/20',
     };
 
     const sizes = {
-        sm: 'px-6 py-3',
-        md: 'px-10 py-5',
-        lg: 'px-14 py-8', // Substantially taller and wider for premium feel
+        sm: 'px-4 py-2',
+        md: 'px-6 py-3',
+        lg: 'px-10 py-5',
+        xl: 'px-12 py-7', // Cinematic / Substantial
     };
 
     const textStyles = {
-        primary: 'text-white font-black uppercase tracking-[1.5px] text-[14px]',
-        secondary: 'text-zinc-200 font-bold tracking-tight text-[17px]',
-        accent: 'text-black font-black text-[20px] tracking-tight', // Larger and bolder
-        ghost: 'text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[12px]',
-        danger: 'text-red-500 font-black uppercase tracking-widest text-[12px]',
+        primary: 'text-white font-bold text-[15px]',
+        secondary: 'text-zinc-200 font-semibold text-[15px]',
+        accent: 'text-white font-bold text-[16px]',
+        substantial: 'text-white font-black text-[20px] tracking-tight',
+        ghost: 'text-slate-500 dark:text-slate-400 font-semibold text-[14px]',
+        danger: 'text-red-500 font-bold text-[14px]',
     };
 
     const content = (
@@ -91,19 +95,19 @@ export const Button = ({
                 />
             ) : (
                 <>
-                    {Icon && iconPosition === 'left' && <Icon size={20} color={variant === 'accent' ? 'black' : 'white'} />}
+                    {Icon && iconPosition === 'left' && <Icon size={18} color={variant === 'accent' ? 'white' : 'white'} />}
                     {typeof children === 'string' ? (
                         <Text className={`${textStyles[variant]} text-center`}>{children}</Text>
                     ) : (
                         children
                     )}
-                    {Icon && iconPosition === 'right' && <Icon size={20} color={variant === 'accent' ? 'black' : 'white'} />}
+                    {Icon && iconPosition === 'right' && <Icon size={18} color={variant === 'accent' ? 'white' : 'white'} />}
                 </>
             )}
         </View>
     );
 
-    const accentStyle = variant === 'accent' ? { backgroundColor: '#FFB74D' } : {};
+    const accentStyle = variant === 'accent' ? { backgroundColor: '#10B981' } : {};
 
     return (
         <AnimatedPressable
@@ -112,7 +116,7 @@ export const Button = ({
             onPressOut={handlePressOut}
             disabled={disabled || loading}
             style={[animatedStyle, accentStyle, props.style]}
-            className={`flex-row items-center justify-center rounded-full overflow-hidden ${variants[variant]} ${sizes[size]} ${disabled ? 'opacity-40' : ''} ${className}`}
+            className={`flex-row items-center justify-center rounded-2xl overflow-hidden ${variants[variant]} ${sizes[size]} ${disabled ? 'opacity-40' : ''} ${className}`}
             accessibilityRole="button"
             accessibilityLabel={accessibilityLabel || (typeof children === 'string' ? children : undefined)}
             accessibilityHint={accessibilityHint}

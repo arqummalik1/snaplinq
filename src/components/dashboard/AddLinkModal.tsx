@@ -98,12 +98,24 @@ export const AddLinkModal = ({ visible, onClose, editLink, sharedUrl, onClearSha
     };
 
     const handleSubmit = async () => {
-        const normalizedUrl = normalizeUrl(url);
+        // Debug: Check what values we have
+        console.log('=== FORM SUBMIT DEBUG ===');
+        console.log('Raw URL:', url);
+        console.log('Raw Title:', title);
+        console.log('Category:', category);
+        console.log('=========================');
 
-        if (!normalizedUrl || !title) {
-            error('Please enter a URL and title');
+        if (!url.trim()) {
+            error('Please enter a URL');
             return;
         }
+
+        if (!title.trim()) {
+            error('Please enter a title');
+            return;
+        }
+
+        const normalizedUrl = normalizeUrl(url);
 
         if (!isValidUrl(normalizedUrl)) {
             error('Please enter a valid URL (e.g., example.com)');
@@ -113,19 +125,27 @@ export const AddLinkModal = ({ visible, onClose, editLink, sharedUrl, onClearSha
         setLoading(true);
         try {
             if (editLink) {
-                const patch: LinkPatch = { url: normalizedUrl, title, category, icon };
+                const patch: LinkPatch = { url: normalizedUrl, title: title.trim(), category, icon };
                 await updateLink(editLink.id, patch);
                 success('Link updated successfully');
             } else {
-                const newLink: NewLink = { url: normalizedUrl, title, category, icon };
+                const newLink: NewLink = {
+                    url: normalizedUrl,
+                    title: title.trim(),
+                    category: category || 'Uncategorized',
+                    icon: icon || ''
+                };
+                console.log('Submitting newLink:', newLink);
                 await addLink(newLink);
                 success('Link added to your vault');
             }
             onClose();
             resetForm();
-        } catch (e) {
-            console.error(e);
-            error(editLink ? 'Failed to update link' : 'Failed to add link');
+        } catch (e: any) {
+            console.error('Form submit error:', e);
+            // Show user-friendly error message
+            const errorMessage = e?.message || (editLink ? 'Failed to update link' : 'Failed to add link');
+            error(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -185,8 +205,8 @@ export const AddLinkModal = ({ visible, onClose, editLink, sharedUrl, onClearSha
                                     setHasChanges(true);
                                 }}
                                 className={`px-3 py-1.5 rounded-full border ${category === c
-                                        ? 'bg-emerald-500 border-emerald-500'
-                                        : 'border-slate-300 dark:border-slate-600'
+                                    ? 'bg-emerald-500 border-emerald-500'
+                                    : 'border-slate-300 dark:border-slate-600'
                                     }`}
                             >
                                 <Text
@@ -229,7 +249,13 @@ export const AddLinkModal = ({ visible, onClose, editLink, sharedUrl, onClearSha
                     </View>
                 )}
 
-                <Button onPress={handleSubmit} loading={loading} className="mt-4">
+                <Button
+                    onPress={handleSubmit}
+                    loading={loading}
+                    variant="primary"
+                    size="lg"
+                    className="mt-4 mb-3"
+                >
                     {editLink ? 'Save Changes' : 'Add Link'}
                 </Button>
             </View>

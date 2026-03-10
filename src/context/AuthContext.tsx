@@ -3,6 +3,7 @@ import { type Session, type User } from '@supabase/supabase-js';
 import * as WebBrowser from 'expo-web-browser';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
+import { ENV } from '../config/env';
 import { supabase } from '../lib/supabase';
 
 interface AuthContextType {
@@ -15,14 +16,13 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Web: Setup for Auth Session
+// Auth setup based on environment
 if (Platform.OS === 'web') {
     WebBrowser.maybeCompleteAuthSession();
 } else {
-    // Basic Google Config (User needs to replace webClientId with their own from Google Cloud)
-    // This is a placeholder config.
+    // Secure configuration using centralized ENV
     GoogleSignin.configure({
-        webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+        webClientId: ENV.GOOGLE_WEB_CLIENT_ID,
         offlineAccess: true,
     });
 }
@@ -54,7 +54,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             // WEB: OAuth Redirect
             // Use window.location.origin but ensure it doesn't have trailing slash for Supabase matching
             const origin = typeof window !== 'undefined' ? window.location.origin.replace(/\/$/, '') : '';
-            
+
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {

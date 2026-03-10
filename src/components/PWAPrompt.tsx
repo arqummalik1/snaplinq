@@ -82,42 +82,48 @@ export function PWAPrompt() {
     if (promptDisabled || !showPrompt) return null;
 
     return (
-        <View style={StyleSheet.absoluteFill} pointerEvents="box-none" className="items-center justify-center p-6 z-50">
-            <Animated.View
-                entering={FadeInDown.springify().damping(15)}
-                exiting={FadeOutDown}
-                className="w-full max-w-[420px] bg-[#1C1C1E] rounded-[32px] p-6 shadow-2xl border border-[#2C2C2E] flex-row items-center gap-5"
-            >
-                <View className="bg-emerald-500/20 p-4 rounded-3xl">
-                    <Download size={28} color="#10b981" />
-                </View>
-                <View className="flex-1">
-                    <Text className="font-heavy text-white text-[18px] mb-1">
-                        Install Snaplinq
-                    </Text>
-                    <Text className="text-[14px] text-zinc-400 leading-snug">
-                        {isIOS
-                            ? "Tap Share and select 'Add to Home Screen' to install."
-                            : "Add to your device for a premium, local-first experience."}
-                    </Text>
-                    <View className="flex-row gap-3 mt-4">
+        <>
+            {/* Background overlay */}
+            <View style={StyleSheet.absoluteFill} className="bg-black/60" />
+            <View style={StyleSheet.absoluteFill} pointerEvents="box-none" className="items-center justify-center p-6 z-50">
+                <Animated.View
+                    entering={FadeInDown.springify().damping(15)}
+                    exiting={FadeOutDown}
+                    className="w-full max-w-[360px] bg-[#18181B] rounded-3xl p-5 shadow-2xl border border-[#27272A]"
+                >
+                    <View className="flex-row items-center gap-4">
+                        <View className="bg-emerald-500/20 p-3 rounded-2xl">
+                            <Download size={24} color="#10b981" />
+                        </View>
+                        <View className="flex-1">
+                            <Text className="font-bold text-white text-base mb-1">
+                                Install App
+                            </Text>
+                            <Text className="text-xs text-zinc-400 leading-snug">
+                                {isIOS
+                                    ? "Tap Share → Add to Home Screen"
+                                    : "Add to your home screen for the best experience"}
+                            </Text>
+                        </View>
+                    </View>
+                    <View className="flex-row gap-2 mt-4">
                         {!isIOS && (
                             <Pressable
                                 onPress={handleInstall}
-                                className="bg-emerald-500 px-6 py-2.5 rounded-full items-center active:scale-95"
+                                className="flex-1 bg-emerald-500 py-2.5 rounded-xl items-center active:scale-98"
                             >
-                                <Text className="text-white font-heavy text-sm">Install App</Text>
+                                <Text className="text-white font-semibold text-sm">Install</Text>
                             </Pressable>
                         )}
                         <Pressable
                             onPress={handleDismiss}
-                            className="bg-[#2C2C2E] px-6 py-2.5 rounded-full items-center active:scale-95"
+                            className="flex-1 bg-[#27272A] py-2.5 rounded-xl items-center active:scale-98"
                         >
-                            <Text className="text-zinc-300 font-bold text-sm">Maybe Later</Text>
+                            <Text className="text-zinc-300 font-medium text-sm">Later</Text>
                         </Pressable>
                     </View>
-                </View>
-            </Animated.View>
-        </View>
+                </Animated.View>
+            </View>
+        </>
     );
 }

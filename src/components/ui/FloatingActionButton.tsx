@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: 24, // Default, can be overridden
         right: 24,
-        zIndex: 50,
+        zIndex: 100, // Increased to be above header (zIndex: 40)
         ...Platform.select({
             web: { position: 'fixed' as any }
         })

@@ -49,9 +49,14 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
         await AsyncStorage.setItem('snaplinq_layout', newLayout);
     };
 
-    const toggleTheme = () => {
-        const next = colorScheme === 'dark' ? 'light' : 'dark';
-        setTheme(next);
+    const toggleTheme = async () => {
+        // Use theme state instead of colorScheme to ensure proper toggle
+        const next = theme === 'dark' ? 'light' : (theme === 'system' ? 'light' : 'dark');
+        // If current is system, check actual colorScheme
+        const nextTheme = theme === 'system'
+            ? (colorScheme === 'dark' ? 'light' : 'dark')
+            : (theme === 'dark' ? 'light' : 'dark');
+        await setTheme(nextTheme);
     };
 
     return (

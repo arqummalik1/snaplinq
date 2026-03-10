@@ -14,9 +14,9 @@ interface ToastProps {
 export const Toast = ({ message, type, onHide }: ToastProps) => {
 
     const bgColors = {
-        success: 'bg-emerald-500',
-        error: 'bg-red-500',
-        info: 'bg-blue-500',
+        success: 'bg-emerald-600',
+        error: 'bg-red-600',
+        info: 'bg-blue-600',
     };
 
     const icons = {
@@ -29,12 +29,15 @@ export const Toast = ({ message, type, onHide }: ToastProps) => {
         <Animated.View
             entering={FadeInUp.springify().damping(15)}
             exiting={FadeOutUp}
-            className={`flex-row items-center px-4 py-3 rounded-full shadow-lg mb-3 mx-4 max-w-sm ${bgColors[type]}`}
+            style={[
+                { backgroundColor: type === 'success' ? '#059669' : type === 'error' ? '#dc2626' : '#2563eb' },
+            ]}
+            className={`flex-row items-center px-4 py-3 rounded-2xl shadow-lg mb-3 mx-4 max-w-sm`}
         >
             <View className="mr-3">
                 {icons[type]}
             </View>
-            <Text className="text-white font-medium text-sm mr-2 flex-1 shadow-sm">
+            <Text className="text-white font-medium text-sm mr-2 flex-1">
                 {message}
             </Text>
             <Pressable onPress={onHide} className="p-1 rounded-full active:bg-white/20">

@@ -77,9 +77,33 @@ export const LinkProvider = ({ children }: { children: React.ReactNode }) => {
     }, [session, refresh]);
 
     const addLink = async (link: NewLink) => {
-        if (!session?.user) return;
-        await LinkRepository.add(link, session.user.id);
-        await refresh();
+        if (!session?.user) {
+            const error = new Error('You must be logged in to add links');
+            console.error('Add link failed - No session:', error);
+            throw error;
+        }
+        try {
+            console.log('=== ADD LINK DEBUG ===');
+            console.log('URL:', link.url);
+            console.log('Title:', link.title);
+            console.log('Category:', link.category);
+            console.log('Icon:', link.icon);
+            console.log('User ID:', session.user.id);
+            console.log('======================');
+            await LinkRepository.add(link, session.user.id);
+            console.log('Link added successfully, refreshing...');
+            await refresh();
+            console.log('Links refreshed');
+        } catch (error) {
+            console.error('=== ADD LINK ERROR ===');
+            console.error(error);
+            console.error('=====================');
+            // Log more details about the error
+            if (error instanceof Error) {
+                console.error('Error message:', error.message);
+            }
+            throw error;
+        }
     };
 
     const importLinks = async (newLinks: NewLink[]) => {

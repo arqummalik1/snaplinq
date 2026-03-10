@@ -1,11 +1,24 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { Dimensions, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../src/components/ui/Button';
 import { Input } from '../src/components/ui/Input';
 import { Logo } from '../src/components/ui/Logo';
 import { useToast } from '../src/context/ToastContext';
 import { supabase } from '../src/lib/supabase';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const isSmallHeight = SCREEN_HEIGHT < 700;
+
+const COLORS = {
+    background: '#0A0A0B',
+    card: '#111113',
+    cardBorder: '#1C1C1E',
+    primary: '#10B981',
+    text: '#FFFFFF',
+    textSecondary: '#71717A',
+    textMuted: '#52525B',
+};
 
 export default function ResetPassword() {
     const router = useRouter();
@@ -44,39 +57,92 @@ export default function ResetPassword() {
     };
 
     return (
-        <View className="flex-1 bg-slate-50 dark:bg-slate-900 justify-center items-center p-6">
-            <View className="w-full max-w-md bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-700">
-                <View className="items-center mb-8">
-                    <Logo className="mb-4" width={90} height={90} />
-                    <Text className="text-2xl font-bold text-slate-900 dark:text-white">
-                        New Password
-                    </Text>
-                    <Text className="text-slate-500 dark:text-slate-400 mt-1 text-center">
+        <View style={styles.container}>
+            <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
+            <View style={styles.content}>
+                <View style={styles.logoSection}>
+                    <View style={styles.logoGlow}>
+                        <Logo width={isSmallHeight ? 48 : 64} height={isSmallHeight ? 48 : 64} />
+                    </View>
+                </View>
+
+                <View style={styles.card}>
+                    <Text style={styles.title}>New Password</Text>
+                    <Text style={styles.subtitle}>
                         Enter your new secure password
                     </Text>
-                </View>
 
-                <View className="space-y-4 mb-6">
-                    <Input
-                        label="New Password"
-                        placeholder="••••••••"
-                        value={password}
-                        onChangeText={setPassword}
-                        secureTextEntry
-                    />
-                    <Input
-                        label="Confirm New Password"
-                        placeholder="••••••••"
-                        value={confirmPassword}
-                        onChangeText={setConfirmPassword}
-                        secureTextEntry
-                    />
-                </View>
+                    <View style={styles.inputContainer}>
+                        <Input
+                            variant="dark"
+                            label="New Password"
+                            placeholder="Enter new password"
+                            value={password}
+                            onChangeText={setPassword}
+                            secureTextEntry
+                        />
+                        <Input
+                            variant="dark"
+                            label="Confirm Password"
+                            placeholder="Confirm new password"
+                            value={confirmPassword}
+                            onChangeText={setConfirmPassword}
+                            secureTextEntry
+                        />
+                    </View>
 
-                <Button onPress={handleUpdatePassword} loading={loading}>
-                    Update Password
-                </Button>
+                    <Button onPress={handleUpdatePassword} loading={loading}>
+                        Update Password
+                    </Button>
+                </View>
             </View>
         </View>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: COLORS.background,
+        justifyContent: 'center',
+    },
+    content: {
+        paddingHorizontal: 24,
+        alignItems: 'center',
+    },
+    logoSection: {
+        marginBottom: 24,
+    },
+    logoGlow: {
+        padding: 16,
+        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+        borderRadius: 24,
+        borderWidth: 1,
+        borderColor: 'rgba(16, 185, 129, 0.2)',
+    },
+    card: {
+        width: '100%',
+        maxWidth: 400,
+        backgroundColor: COLORS.card,
+        borderRadius: 24,
+        borderWidth: 1,
+        borderColor: COLORS.cardBorder,
+        padding: 24,
+    },
+    title: {
+        color: COLORS.text,
+        fontSize: 24,
+        fontWeight: '700',
+        textAlign: 'center',
+        marginBottom: 8,
+    },
+    subtitle: {
+        color: COLORS.textSecondary,
+        fontSize: 14,
+        textAlign: 'center',
+        marginBottom: 24,
+    },
+    inputContainer: {
+        marginBottom: 24,
+    },
+});
